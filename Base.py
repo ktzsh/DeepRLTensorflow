@@ -67,6 +67,11 @@ class BaseAgent(object):
         self._history           = History(self.input_shape)
         self._num_actions_taken = 0
 
+        if not os.path.exists(self.SAVE_NETWORK_PATH + self.ENV_NAME):
+            os.makedirs(self.SAVE_NETWORK_PATH + self.ENV_NAME)
+        if not os.path.exists(self.SAVE_SUMMARY_PATH + self.ENV_NAME):
+            os.makedirs(self.SAVE_SUMMARY_PATH + self.ENV_NAME)
+
         self.pickle_path        = None
         if os.path.exists('pickle.txt'):
             path = None
@@ -88,11 +93,6 @@ class BaseAgent(object):
             self._memory     = ReplayMemory(self.MEMORY_SIZE, self.input_shape[1:], self.STATE_LENGTH)
             self.tb_counter  = len([log for log in os.listdir(os.path.expanduser(
                                             self.SAVE_SUMMARY_PATH + self.ENV_NAME)) if 'Experiment_' in log]) + 1
-
-        if not os.path.exists(self.SAVE_NETWORK_PATH + self.ENV_NAME):
-            os.makedirs(self.SAVE_NETWORK_PATH + self.ENV_NAME)
-        if not os.path.exists(self.SAVE_SUMMARY_PATH + self.ENV_NAME):
-            os.makedirs(self.SAVE_SUMMARY_PATH + self.ENV_NAME)
 
     def build_network(self, input_shape):
         raise NotImplementedError
