@@ -158,7 +158,6 @@ if __name__=="__main__":
 
             current_state = new_state
             print "--------------------\n"
-            time.sleep(0.5)
     else:
         # Test
         while True:

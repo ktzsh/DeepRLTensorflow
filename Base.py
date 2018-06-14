@@ -15,7 +15,6 @@ class BaseAgent(object):
 
         self.AGENT_TYPE             = self.config['AGENT_TYPE']
         self.DOUBLE_Q               = self.config['DOUBLE_Q']
-        self.AVG_DUELING            = self.config['AVERAGE_DUELING']
 
         self.TEST                   = self.config['TEST']
 
@@ -38,6 +37,7 @@ class BaseAgent(object):
         self.LOAD_NETWORK           = self.config['AGENT']['LOAD_NETWORK']
         self.SAVE_NETWORK_PATH      = self.config['AGENT']['SAVE_NETWORK_PATH']
         self.SAVE_SUMMARY_PATH      = self.config['AGENT']['SAVE_SUMMARY_PATH']
+        self.SAVE_MEMORY            = self.config['AGENT']['SAVE_MEMORY']
 
         self.IMAGE_WIDTH   = self.config['IMAGE_WIDTH']
         self.IMAGE_HEIGHT  = self.config['IMAGE_HEIGHT']
@@ -175,7 +175,7 @@ class BaseAgent(object):
         # Append to long term memory
 
         self._memory.append(old_state, action, reward, done)
-        if done:
+        if done and self.SAVE_MEMORY:
             old_pickle_path = self.pickle_path
             self.pickle_path = 'memory_' + str(self.episode) + '_' + str(self.t) + '_' \
                             + str(self._num_actions_taken) + '_' + str(self.epsilon) + \
