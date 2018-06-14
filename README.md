@@ -27,8 +27,11 @@ First, install prerequisites with:
     $ pip install gym[all]
 
 To train a model for Breakout:
-    - Edit the config.yml change 'NAME' to 'Breakout-v0'
-    - Change Other parameters as desired
+- Edit the config.yml change ['ENVIRONMENT']['NAME'] to 'Breakout-v0'
+- Change Other parameters as desired
+
+Then Run:
+
     $ python Agent.py
 
 
@@ -37,10 +40,12 @@ To train a model for Breakout:
 
 
 ## TODOs
+- [x] Implement DQN
 - [x] Implement DDQN
 - [ ] Implement DRQN
+- [ ] Prioritized Experience Replay
 - [ ] Add Detailed Results
-- [ ] Add Test modes
+- [ ] Dueling Network Architectures
 
 
 
