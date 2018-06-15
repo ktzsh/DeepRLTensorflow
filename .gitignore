@@ -1,6 +1,10 @@
 # Custom
 chkpnt-*
 models/
+snapshot/
+snapshot.lock
+*.npy
+test.py
 pickle*
 memory_*
 logs/
