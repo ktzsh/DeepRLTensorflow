@@ -1,6 +1,7 @@
 import gym
 import cv2
 import yaml
+import random
 import numpy as np
 
 class Environment(object):
@@ -8,7 +9,8 @@ class Environment(object):
         with open("config.yml", 'r') as stream:
             self.config = yaml.load(stream)
 
-        self.env       = gym.make(self.config['ENVIRONMENT']['NAME'])
+        self.env          = gym.make(self.config['ENVIRONMENT']['NAME'])
+        self.action_space = self.env.unwrapped.get_action_meanings()
         self.env.reset()
 
         self.test      = self.config['TEST']
@@ -42,7 +44,7 @@ class Environment(object):
             self.env.render()
 
     def reset(self):
-        if self.env.env.ale.lives() == 0:
+        if self.env.unwrapped.ale.lives() == 0:
             screen = self.preprocess(self.env.reset())
         else:
             screen, _, _, _ = self.env.step(0)
@@ -52,15 +54,16 @@ class Environment(object):
         return screen
 
     def step(self, action):
+        terminal = False
         cummulative_reward = 0.0
-        start_lives = self.env.env.ale.lives()
+        start_lives = self.env.unwrapped.ale.lives()
 
-        for i in range(self.repeat):
-            screen, reward, terminal, _ = self.env.step(action)
+        for i in range(random.choice(self.repeat)):
+            screen, reward, _, _ = self.env.step(action)
             screen                      = self.preprocess(screen)
-            cummulative_reward          = cummulative_reward +  reward
+            cummulative_reward          = cummulative_reward + reward
 
-            if (not self.test) and (start_lives > self.env.env.ale.lives()):
+            if (not self.test) and (start_lives > self.env.unwrapped.ale.lives()):
                 terminal             = True
                 cummulative_reward   = -1.0
 
@@ -68,7 +71,7 @@ class Environment(object):
                 break
 
         print "Reward     :", cummulative_reward
-        print "Action     :", action
+        print "Action     :", action, " ",self.action_space[action]
         print "Done       :", terminal
 
         self.render()
