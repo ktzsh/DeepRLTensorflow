@@ -8,16 +8,23 @@ class ReplayMemory(object):
     The replay memory allows us to efficiently sample minibatches from it, and generate the correct state representation
     (w.r.t the number of previous frames needed).
     """
-    def __init__(self, size, sample_shape, history_length=4):
+    def __init__(self, size, sample_shape, history_length=4, restore=None):
         self._pos            = 0
         self._count          = 0
         self._max_size       = size
         self._history_length = max(1, history_length)
         self._state_shape    = sample_shape
-        self._states         = np.zeros((size,) + sample_shape, dtype=np.float32)
-        self._actions        = np.zeros(size, dtype=np.uint8)
-        self._rewards        = np.zeros(size, dtype=np.float32)
-        self._terminals      = np.zeros(size, dtype=np.float32)
+
+        if restore is not None:
+            self._states     = np.load(restore + 'states.npy')
+            self._actions    = np.load(restore + 'actions.npy')
+            self._rewards    = np.load(restore + 'rewards.npy')
+            self._terminals  = np.load(restore + 'terminals.npy')
+        else:
+            self._states     = np.zeros((size,) + sample_shape, dtype=np.float32)
+            self._actions    = np.zeros(size, dtype=np.uint8)
+            self._rewards    = np.zeros(size, dtype=np.float32)
+            self._terminals  = np.zeros(size, dtype=np.float32)
 
     def __len__(self):
         """ Returns the number of items currently present in the memory
@@ -93,8 +100,7 @@ class ReplayMemory(object):
             return self._states.take(indexes, mode='wrap', axis=0)
 
     def save(self, path):
-        with open('pickle.txt', 'wb') as f:
-            f.write(path)
-        print "Saving Replay Memory to", path
-        with open(path, 'wb') as f:
-            pickle.dump(self, f, pickle.HIGHEST_PROTOCOL)
+        np.save(path + 'states.npy', self._states)
+        np.save(path + 'actions.npy', self._actions)
+        np.save(path + 'rewards.npy', self._rewards)
+        np.save(path + 'terminals.npy', self._terminals)

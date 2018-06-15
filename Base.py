@@ -37,7 +37,8 @@ class BaseAgent(object):
         self.LOAD_NETWORK           = self.config['AGENT']['LOAD_NETWORK']
         self.SAVE_NETWORK_PATH      = self.config['AGENT']['SAVE_NETWORK_PATH']
         self.SAVE_SUMMARY_PATH      = self.config['AGENT']['SAVE_SUMMARY_PATH']
-        self.SAVE_MEMORY            = self.config['AGENT']['SAVE_MEMORY']
+        self.SAVE_TRAIN_STATE            = self.config['AGENT']['SAVE_TRAIN_STATE']
+        self.SAVE_TRAIN_STATE_PATH       = self.config['AGENT']['SAVE_TRAIN_STATE_PATH']
 
         self.IMAGE_WIDTH   = self.config['IMAGE_WIDTH']
         self.IMAGE_HEIGHT  = self.config['IMAGE_HEIGHT']
@@ -71,24 +72,24 @@ class BaseAgent(object):
             os.makedirs(self.SAVE_NETWORK_PATH + self.ENV_NAME)
         if not os.path.exists(self.SAVE_SUMMARY_PATH + self.ENV_NAME):
             os.makedirs(self.SAVE_SUMMARY_PATH + self.ENV_NAME)
+        if not os.path.exists(self.SAVE_TRAIN_STATE_PATH + self.ENV_NAME):
+            os.makedirs(self.SAVE_TRAIN_STATE_PATH + self.ENV_NAME)
 
-        self.pickle_path        = None
-        if os.path.exists('pickle.txt'):
-            path = None
-            with open('pickle.txt', 'rb') as f:
-                path   = f.readline().rstrip('\n')
-                params = path[:-7].split('_')
-
+        restore_prefix = self.SAVE_TRAIN_STATE_PATH + self.ENV_NAME + '/'
+        if os.path.exists(restore_prefix + 'snapshot.lock'):
+            print "Restoring Training State Snapshot from", restore_prefix
+            with open(restore_prefix + 'snapshot.lock', 'rb') as f:
+                params = f.read().split('\n')
                 self.episode            = int(params[1])
                 self.t                  = int(params[2])
                 self._num_actions_taken = int(params[3])
                 self.epsilon            = float(params[4])
-            with open(path, 'rb') as f:
-                print "Restoring Replay Memory from", path
-                self._memory     = pickle.load(f)
-                self.pickle_path = path
-                self.tb_counter  = len([log for log in os.listdir(os.path.expanduser(
+
+            self._memory     = ReplayMemory(self.MEMORY_SIZE, self.input_shape[1:], self.STATE_LENGTH,
+                                                                                    restore=restore_prefix)
+            self.tb_counter  = len([log for log in os.listdir(os.path.expanduser(
                                             self.SAVE_SUMMARY_PATH + self.ENV_NAME)) if 'Experiment_' in log])
+            os.remove(restore_prefix + 'snapshot.lock')
         else:
             self._memory     = ReplayMemory(self.MEMORY_SIZE, self.input_shape[1:], self.STATE_LENGTH)
             self.tb_counter  = len([log for log in os.listdir(os.path.expanduser(
@@ -173,17 +174,17 @@ class BaseAgent(object):
             self._history.reset()
 
         # Append to long term memory
-
         self._memory.append(old_state, action, reward, done)
-        if done and self.SAVE_MEMORY:
-            old_pickle_path = self.pickle_path
-            self.pickle_path = 'memory_' + str(self.episode) + '_' + str(self.t) + '_' \
-                            + str(self._num_actions_taken) + '_' + str(self.epsilon) + \
-                            '.pickle'
-            self._memory.save(self.pickle_path)
 
-            if old_pickle_path is not None:
-                os.remove(old_pickle_path)
+        if done and self.SAVE_TRAIN_STATE and (self.t % self.SAVE_INTERVAL == 0 ):
+            snapshot_params =  'Snapshot Parameters [Episode, Timestep, Actions Taken, Epsilon]\n' + \
+                                        str(self.episode) + '\n' + \
+                                        str(self.t) + '\n' + \
+                                        str(self._num_actions_taken) + '\n' + \
+                                        str(self.epsilon)
+            self._memory.save(self.SAVE_TRAIN_STATE_PATH + self.ENV_NAME + '/')
+            with open(self.SAVE_TRAIN_STATE_PATH + self.ENV_NAME + '/snapshot.lock', 'wb') as f:
+                f.write(snapshot_params)
 
     def train(self):
         """ This allows the agent to train itself to better understand the environment dynamics.
