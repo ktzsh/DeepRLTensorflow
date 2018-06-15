@@ -6,7 +6,7 @@ from Base import BaseAgent
 from Environment import Environment
 
 import tensorflow as tf
-from keras.layers import Input, ConvLSTM2D, Dense, Flatten
+from keras.layers import Input, ConvLSTM2D, Dense, Flatten, Conv2D, Reshape
 from keras.models import Model
 
 class Agent(BaseAgent):
@@ -51,12 +51,10 @@ class Agent(BaseAgent):
 
     def build_network(self, input_shape):
         input_frames = Input(shape=input_shape, dtype='float32', name='input_frames')
-        x = ConvLSTM2D(16, (8, 8), strides=(4,4), activation='relu',
-                                                  return_sequences=True, name='conv1_lstm')(input_frames)
-        x = ConvLSTM2D(32, (4, 4), strides=(2,2), activation='relu',
-                                                  return_sequences=True, name='conv2_lstm')(x)
-        x = ConvLSTM2D(32, (3, 3), strides=(1,1), activation='relu',
-                                                  return_sequences=False, name='conv3_lstm')(x)
+
+        x = Reshape(input_shape[1:-1] + (input_shape[0] * input_shape[-1],))(input_frames)
+        x = Conv2D(16, (8, 8), strides=(4,4), activation='relu', name='conv1')(x)
+        x = Conv2D(32, (4, 4), strides=(2,2), activation='relu', name='conv2')(x)
         x = Flatten(name='flatten')(x)
         x = Dense(256, activation='relu', name='fc1')(x)
         output = Dense(self.nb_actions, name='output')(x)
