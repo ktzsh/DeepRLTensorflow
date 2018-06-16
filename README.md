@@ -11,10 +11,12 @@ This implementation contains:
 3. Network for Q-learning targets are fixed for intervals [OpenAI hack]
     - to reduce the correlations between target and predicted Q-values
 4. Image Cropping and Explicit Frame Skiping as in Original paper
+5. Support for Both Atari and Classic Control Environemnts from OpenAI gym
 
 ## Requirements
 
 - Python 2.7 or Python 3.3+
+- Yaml
 - [gym](https://github.com/openai/gym)
 - [OpenCV2](http://opencv.org/)
 - [TensorFlow](https://github.com/tensorflow/tensorflow)
