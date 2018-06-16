@@ -22,17 +22,24 @@ This implementation contains:
 
 ## Usage
 
-First, install prerequisites with:
+1. First, install prerequisites with:
 
-    $ pip install gym[all]
+        $ pip install gym[all]
 
-To train a model for Breakout:
-- Edit the config.yml change ['ENVIRONMENT']['NAME'] to 'Breakout-v0'
-- Change Other parameters as desired
+2. To train a model for Breakout(or Any Other Atari Games):
+    - Edit the config.yml and change following keys:
+    	- ['ENVIRONMENT']['TYPE'] to 'Atari'
+    	- ['ENVIRONMENT']['NAME'] to 'Breakout-v0'
+    	- leave empty ['EXPLICIT_INPUT_SHAPE'] or set to null
+3. To train a model for CartPole(or Any Other Classic Control Games):
+    - Edit the config.yml and change following keys:
+        - ['ENVIRONMENT']['TYPE'] to 'Classic'
+        - ['ENVIRONMENT']['NAME'] to 'CartPole-v0'
+        - ['EXPLICIT_INPUT_SHAPE'] to shape of observations ([4] in case of CartPole)
+4. Change Other parameters as desired
+5. Then Run:
 
-Then Run:
-
-    $ python Agent.py
+        $ python Agent.py
 
 
 ## Results

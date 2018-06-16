@@ -19,6 +19,7 @@ class BaseAgent(object):
         self.TEST                   = self.config['TEST']
 
         self.ENV_NAME               = self.config['ENVIRONMENT']['NAME']
+        self.ENV_TYPE               = self.config['ENVIRONMENT']['TYPE']
 
         self.STATE_LENGTH           = self.config['AGENT']['STATE_LENGTH']
         self.GAMMA                  = self.config['AGENT']['GAMMA']
@@ -65,6 +66,10 @@ class BaseAgent(object):
             self.input_shape = (self.STATE_LENGTH, self.IMAGE_HEIGHT, self.IMAGE_WIDTH, 1)
         else:
             self.input_shape = (self.STATE_LENGTH, self.IMAGE_HEIGHT, self.IMAGE_WIDTH, 3)
+
+        self.EXPLICIT_INPUT_SHAPE = self.config['EXPLICIT_INPUT_SHAPE']
+        if self.EXPLICIT_INPUT_SHAPE is not None:
+            self.input_shape = (self.STATE_LENGTH,) + tuple(self.EXPLICIT_INPUT_SHAPE)
 
         self._history           = History(self.input_shape)
         self._num_actions_taken = 0

@@ -10,7 +10,9 @@ class Environment(object):
             self.config = yaml.load(stream)
 
         self.env          = gym.make(self.config['ENVIRONMENT']['NAME'])
+        self.n            = self.env.action_space.n
         self.action_space = self.env.unwrapped.get_action_meanings()
+
         self.env.reset()
 
         self.test      = self.config['TEST']
