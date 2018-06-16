@@ -52,6 +52,7 @@ class BaseAgent(object):
 
         self.total_reward  = 0.0
         self.total_q_max   = 0.0
+        self.total_q_mean  = 0.0
         self.total_loss    = 0
         self.duration      = 0
         self.episode       = 0
@@ -130,14 +131,17 @@ class BaseAgent(object):
         # If done, reset short term memory (ie. History)
         self.total_reward += reward
         env_with_history = self._history.value
-        self.total_q_max += np.max(self.q_values.eval(feed_dict={self.s: env_with_history.reshape((1,) + env_with_history.shape)}))
+        q_vals = self.q_values.eval(feed_dict={self.s: env_with_history.reshape((1,) + env_with_history.shape)})
+        self.total_q_max += np.max(q_vals)
+        self.total_q_mean += np.mean(q_vals)
         self.duration += 1
 
         if done:
             # Write summary
             if self.t >= self.INITIAL_REPLAY_SIZE:
                 stats = [self.total_reward, self.total_q_max / float(self.duration),
-                        self.duration, self.total_loss / (float(self.duration)), self.t]
+                            self.total_q_mean / float(self.duration), self.duration,
+                            self.total_loss / (float(self.duration)), self.t]
                 for i in range(len(stats)):
                     self.sess.run(self.update_ops[i], feed_dict={
                         self.summary_placeholders[i]: float(stats[i])
@@ -159,16 +163,18 @@ class BaseAgent(object):
                 "\nEPSILON    :", self.epsilon, \
                 "\nTOTALREWARD:", self.total_reward, \
                 "\nAVG_MAX_Q  :", self.total_q_max / float(self.duration), \
+                "\nAVG_MEAN_Q :", self.total_q_mean / float(self.duration), \
                 "\nAVG_LOSS   :", self.total_loss / float(self.duration), \
                 "\nMODE       :", mode
 
             print "-------------------------"
 
             self.total_reward = 0
-            self.total_q_max = 0
-            self.total_loss = 0
-            self.duration = 0
-            self.episode += 1
+            self.total_q_max  = 0
+            self.total_q_mean = 0
+            self.total_loss   = 0
+            self.duration     = 0
+            self.episode     += 1
 
             # Reset the short term memory
             self._history.reset()

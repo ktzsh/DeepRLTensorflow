@@ -8,7 +8,7 @@ NORMALIZE_IMG          : true
 IMAGE_CROPING          : false    # In the original paper a square croped region is used however it is optional
                                   # NOTE: Cropping assumes height is always greater than width
 
-REPEAT_ACTION          : [2,3,4]  # Number of times the same action is repeated.
+REPEAT_ACTION          : [2,3,4]  # Number of times the same action is repeated. Sampled randomly from given array
                                   # Explicit frame skipping is not required in many gym games
                                   # since it is already implemented.
 
