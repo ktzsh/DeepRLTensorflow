@@ -21,24 +21,24 @@ ENVIRONMENT:
     NAME                   : "Breakout-v0"
 
 AGENT:
-    MAX_EPISODES           : 5000     # Maximum number of episodes
+    MAX_EPISODES           : 100000     # Maximum number of episodes
     GAMMA                  : 0.99     # Discount factor
     STATE_LENGTH           : 4        # Number of most recent frames to produce the input to the network
     INITIAL_EPSILON        : 1.0      # Initial value of epsilon in epsilon-greedy
     FINAL_EPSILON          : 0.1      # Final value of epsilon in epsilon-greedy
 
     INITIAL_REPLAY_SIZE    : 10000    # Number of steps to populate the replay memory before training starts
-    EXPLORATION_STEPS      : 50000    # Number of exploratoion steps
-    MEMORY_SIZE            : 50000    # Number of replay memory the agent uses for training
+    EXPLORATION_STEPS      : 100000    # Number of exploratoion steps
+    MEMORY_SIZE            : 100000    # Number of replay memory the agent uses for training
 
     BATCH_SIZE             : 32       # Mini batch size
     TARGET_UPDATE_INTERVAL : 5000     # The frequency with which the target network is updated
     TRAIN_INTERVAL         : 4        # The agent selects 4 actions between successive updates
 
-    LEARNING_RATE          : 0.00025  # Learning rate used by RMSProp
+    LEARNING_RATE          : 0.001  # Learning rate used by RMSProp
     MOMENTUM               : 0.95     # Momentum used by RMSProp
     MIN_GRAD               : 0.01     # Constant added to the squared gradient in the denominator of the RMSProp update
-    DECAY_RATE             : 0.96
+    DECAY_RATE             : 0.95
 
     SAVE_INTERVAL          : 10000    # The frequency with which the network is saved
     SAVE_TRAIN_STATE       : false    # Take Snapshot of Training State to resume Training
