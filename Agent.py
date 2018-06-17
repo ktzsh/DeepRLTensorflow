@@ -2,6 +2,7 @@ import sys
 import time
 import yaml
 import numpy as np
+from collections import deque
 
 from Base import BaseAgent
 
@@ -38,7 +39,7 @@ class Agent(BaseAgent):
         # Define loss and gradient update operation
         self.a, self.y, self.loss, self.grads_update = self.build_training_op(q_network_weights)
 
-        self.sess  = tf.InteractiveSession()
+        self.sess  = tf.Session()
         self.saver = tf.train.Saver(q_network_weights)
 
         self.summary_placeholders, self.update_ops, self.summary_op = self.setup_summary()
@@ -57,21 +58,20 @@ class Agent(BaseAgent):
 
 
     def build_network(self, input_shape):
-        input_frames = Input(shape=input_shape, dtype='float32', name='input_frames')
+        input_frames = Input(shape=input_shape, dtype='float32')
         x = Reshape(input_shape[1:-1] + (input_shape[0] * input_shape[-1],))(input_frames)
 
         if self.ENV_TYPE == "Atari":
-            x = Conv2D(32, (8, 8), strides=(4,4), activation='relu', name='conv1')(x)
-            x = Conv2D(64, (4, 4), strides=(2,2), activation='relu', name='conv2')(x)
-            x = Conv2D(64, (3, 3), strides=(1,1), activation='relu', name='conv2')(x)
+            x = Conv2D(32, (8, 8), strides=(4,4), activation='relu')(x)
+            x = Conv2D(64, (4, 4), strides=(2,2), activation='relu')(x)
+            x = Conv2D(64, (3, 3), strides=(1,1), activation='relu')(x)
             x = Flatten(name='flatten')(x)
-            x = Dense(512, activation='relu', name='fc1')(x)
+            x = Dense(512, activation='relu')(x)
         elif self.ENV_TYPE == "Classic":
-            x = Dense(32, activation='relu', name='fc1')(x)
-            x = Dense(64, activation='relu', name='fc2')(x)
-            x = Dense(64, activation='relu', name='fc3')(x)
+            x = Dense(64, activation='tanh')(x)
+            x = Dense(64, activation='tanh')(x)
 
-        output = Dense(self.nb_actions, name='output')(x)
+        output = Dense(self.nb_actions, activation='linear')(x)
         model = Model(inputs=input_frames, outputs=output)
 
         s = tf.placeholder(tf.float32, (None,) + self.input_shape)
@@ -92,8 +92,12 @@ class Agent(BaseAgent):
         clipped_error  = tf.where(error < 1.0, 0.5 * tf.square(error), error - 0.5)
         loss           = tf.reduce_mean(clipped_error)
 
-        optimizer    = tf.train.RMSPropOptimizer(self.LEARNING_RATE, momentum=self.MOMENTUM, epsilon=self.MIN_GRAD)
-        grads_update = optimizer.minimize(loss, var_list=q_network_weights)
+        optimizer      = tf.train.RMSPropOptimizer(self.LEARNING_RATE,
+                                                    momentum=self.MOMENTUM,
+                                                    epsilon=self.MIN_GRAD,
+                                                    decay=self.DECAY_RATE)
+        # optimizer      = tf.train.AdamOptimizer(self.LEARNING_RATE)
+        grads_update   = optimizer.minimize(loss, var_list=q_network_weights)
 
         return a, y, loss, grads_update
 
@@ -104,12 +108,12 @@ class Agent(BaseAgent):
         state_batch, action_batch, next_state_batch, reward_batch, terminal_batch = self._memory.minibatch(self.BATCH_SIZE)
 
         if self.DOUBLE_Q:
-            q_values_batch = self.q_values.eval(feed_dict={self.st: next_state_batch})
+            q_values_batch = self.sess.run(self.q_values, feed_dict={self.s: next_state_batch})
             max_q_value_idx = np.argmax(q_values_batch, axis=1)
-            target_q_values_at_idx_batch = self.target_q_values.eval(feed_dict={self.st: next_state_batch})[:, max_q_value_idx]
+            target_q_values_at_idx_batch = self.sess.run(self.target_q_values, feed_dict={self.st: next_state_batch})[:, max_q_value_idx]
             y_batch = reward_batch + (1 - terminal_batch) * self.GAMMA * target_q_values_at_idx_batch
         else:
-            target_q_values_batch = self.target_q_values.eval(feed_dict={self.st: next_state_batch})
+            target_q_values_batch = self.sess.run(self.target_q_values, feed_dict={self.st: next_state_batch})
             y_batch = reward_batch + (1 - terminal_batch) * self.GAMMA * np.max(target_q_values_batch, axis=1)
 
         loss, _ = self.sess.run([self.loss, self.grads_update], feed_dict={
@@ -149,31 +153,53 @@ class Agent(BaseAgent):
         else:
             print('Training new network...')
 
+    def run(self, env):
+        scores = deque(maxlen=100)
+
+        # Agent Observes the environment - no ops steps
+        print "Warming Up..."
+        current_state = env.reset()
+        for i in range(self.INITIAL_REPLAY_SIZE):
+
+            action = self.act(current_state)
+            new_state, reward, done = env.step(action)
+            self.observe(current_state, action, reward, done)
+
+            current_state = new_state
+            if done:
+                current_state = env.reset()
+
+        # Actual Training Begins
+        print "Begin Training..."
+        for i in range(self.MAX_EPISODES):
+            t             = 0
+            done          = False
+            current_state = env.reset()
+
+            while not done:
+                action                  = self.act(current_state)
+                new_state, reward, done = env.step(action)
+                self.observe(current_state, action, reward, done)
+                self.train()
+
+                if not agent.QUIET:
+                    print "Reward     :", reward
+                    print "Action     :", action
+                    print "Done       :", terminal
+
+                current_state = new_state
+                t += 1
+
+            scores.append(t)
+            mean_score = np.mean(scores)
+
+            if i % 100 == 0:
+                print('[Episode {}] - Mean survival time over last 100 episodes was {} ticks.. Epsilon - {}'.format(str(i).zfill(5), mean_score, self.epsilon))
+
 
 if __name__=="__main__":
 
     env   = Environment()
     agent = Agent(env.n)
 
-    current_state = env.reset()
-    if not agent.TEST:
-        # Train
-        while True:
-            action                  = agent.act(current_state)
-            new_state, reward, done = env.step(action)
-
-            agent.observe(current_state, action, reward, done)
-            agent.train()
-
-            if done:
-                print "Restarting the Game"
-                new_state = env.reset()
-
-            current_state = new_state
-            print "--------------------\n"
-    else:
-        # Test
-        while True:
-            action = agent.test(current_state)
-            new_state, _, _ = env.step(action)
-            current_state = new_state
+    agent.run(env)

@@ -16,11 +16,12 @@ class BaseAgent(object):
         self.AGENT_TYPE             = self.config['AGENT_TYPE']
         self.DOUBLE_Q               = self.config['DOUBLE_Q']
 
-        self.TEST                   = self.config['TEST']
+        self.QUIET                   = self.config['QUIET']
 
         self.ENV_NAME               = self.config['ENVIRONMENT']['NAME']
         self.ENV_TYPE               = self.config['ENVIRONMENT']['TYPE']
 
+        self.MAX_EPISODES           = self.config['AGENT']['MAX_EPISODES']
         self.STATE_LENGTH           = self.config['AGENT']['STATE_LENGTH']
         self.GAMMA                  = self.config['AGENT']['GAMMA']
         self.EXPLORATION_STEPS      = self.config['AGENT']['EXPLORATION_STEPS']
@@ -34,12 +35,13 @@ class BaseAgent(object):
         self.LEARNING_RATE          = self.config['AGENT']['LEARNING_RATE']
         self.MOMENTUM               = self.config['AGENT']['MOMENTUM']
         self.MIN_GRAD               = self.config['AGENT']['MIN_GRAD']
+        self.DECAY_RATE             = self.config['AGENT']['DECAY_RATE']
         self.SAVE_INTERVAL          = self.config['AGENT']['SAVE_INTERVAL']
         self.LOAD_NETWORK           = self.config['AGENT']['LOAD_NETWORK']
         self.SAVE_NETWORK_PATH      = self.config['AGENT']['SAVE_NETWORK_PATH']
         self.SAVE_SUMMARY_PATH      = self.config['AGENT']['SAVE_SUMMARY_PATH']
-        self.SAVE_TRAIN_STATE            = self.config['AGENT']['SAVE_TRAIN_STATE']
-        self.SAVE_TRAIN_STATE_PATH       = self.config['AGENT']['SAVE_TRAIN_STATE_PATH']
+        self.SAVE_TRAIN_STATE       = self.config['AGENT']['SAVE_TRAIN_STATE']
+        self.SAVE_TRAIN_STATE_PATH  = self.config['AGENT']['SAVE_TRAIN_STATE_PATH']
 
         self.IMAGE_WIDTH   = self.config['IMAGE_WIDTH']
         self.IMAGE_HEIGHT  = self.config['IMAGE_HEIGHT']
@@ -49,7 +51,7 @@ class BaseAgent(object):
 
         self.t             = 0
         self.epsilon       = self.INITIAL_EPSILON
-        self.epsilon_step  = (self.INITIAL_EPSILON - self.FINAL_EPSILON) / (self.EXPLORATION_STEPS * self.STATE_LENGTH)
+        self.epsilon_step  = (self.INITIAL_EPSILON - self.FINAL_EPSILON) / (self.EXPLORATION_STEPS )
 
         self.total_reward  = 0.0
         self.total_q_max   = 0.0
@@ -72,7 +74,6 @@ class BaseAgent(object):
             self.input_shape = (self.STATE_LENGTH,) + tuple(self.EXPLICIT_INPUT_SHAPE)
 
         self._history           = History(self.input_shape)
-        self._num_actions_taken = 0
 
         if not os.path.exists(self.SAVE_NETWORK_PATH + self.ENV_NAME):
             os.makedirs(self.SAVE_NETWORK_PATH + self.ENV_NAME)
@@ -88,8 +89,7 @@ class BaseAgent(object):
                 params = f.read().split('\n')
                 self.episode            = int(params[1])
                 self.t                  = int(params[2])
-                self._num_actions_taken = int(params[3])
-                self.epsilon            = float(params[4])
+                self.epsilon            = float(params[3])
 
             self._memory     = ReplayMemory(self.MEMORY_SIZE, self.input_shape[1:], self.STATE_LENGTH,
                                                                                     restore=restore_prefix)
@@ -125,14 +125,13 @@ class BaseAgent(object):
         else:
             # Use the network to output the best action
             env_with_history = self._history.value
-            action = np.argmax(self.q_values.eval(feed_dict={self.s: env_with_history.reshape((1,) + env_with_history.shape)}))
+            action = np.argmax(self.sess.run(self.q_values, feed_dict={self.s: env_with_history.reshape((1,) + env_with_history.shape)}))
 
         # Anneal epsilon linearly over time
         if self.epsilon > self.FINAL_EPSILON and self.t >= self.INITIAL_REPLAY_SIZE:
             self.epsilon -= self.epsilon_step
 
-        # Keep track of interval action counter
-        self._num_actions_taken += 1
+        self.t += 1
         return action
 
     def observe(self, old_state, action, reward, done):
@@ -141,7 +140,7 @@ class BaseAgent(object):
         # If done, reset short term memory (ie. History)
         self.total_reward += reward
         env_with_history = self._history.value
-        q_vals = self.q_values.eval(feed_dict={self.s: env_with_history.reshape((1,) + env_with_history.shape)})
+        q_vals = self.sess.run(self.q_values, feed_dict={self.s: env_with_history.reshape((1,) + env_with_history.shape)})
         self.total_q_max += np.max(q_vals)
         self.total_q_mean += np.mean(q_vals)
         self.duration += 1
@@ -166,18 +165,19 @@ class BaseAgent(object):
                 mode = 'explore'
             else:
                 mode = 'exploit'
-            print "-----EPISODE SUMMARY-----"
-            print "EPISODE    :", self.episode + 1, \
-                "\nTIMESTEP   :", self.t, \
-                "\nDURATION   :", self.duration, \
-                "\nEPSILON    :", self.epsilon, \
-                "\nTOTALREWARD:", self.total_reward, \
-                "\nAVG_MAX_Q  :", self.total_q_max / float(self.duration), \
-                "\nAVG_MEAN_Q :", self.total_q_mean / float(self.duration), \
-                "\nAVG_LOSS   :", self.total_loss / float(self.duration), \
-                "\nMODE       :", mode
 
-            print "-------------------------"
+            if not self.QUIET:
+                print "-----EPISODE SUMMARY-----"
+                print "EPISODE    :", self.episode + 1, \
+                    "\nTIMESTEP   :", self.t, \
+                    "\nDURATION   :", self.duration, \
+                    "\nEPSILON    :", self.epsilon, \
+                    "\nTOTALREWARD:", self.total_reward, \
+                    "\nAVG_MAX_Q  :", self.total_q_max / float(self.duration), \
+                    "\nAVG_MEAN_Q :", self.total_q_mean / float(self.duration), \
+                    "\nAVG_LOSS   :", self.total_loss / float(self.duration), \
+                    "\nMODE       :", mode
+                print "-------------------------"
 
             self.total_reward = 0
             self.total_q_max  = 0
@@ -196,7 +196,6 @@ class BaseAgent(object):
             snapshot_params =  'Snapshot Parameters [Episode, Timestep, Actions Taken, Epsilon]\n' + \
                                         str(self.episode) + '\n' + \
                                         str(self.t) + '\n' + \
-                                        str(self._num_actions_taken) + '\n' + \
                                         str(self.epsilon) + '\n'
             self._memory.save(self.SAVE_TRAIN_STATE_PATH + self.ENV_NAME + '/')
             with open(self.SAVE_TRAIN_STATE_PATH + self.ENV_NAME + '/snapshot.lock', 'wb') as f:
@@ -212,29 +211,18 @@ class BaseAgent(object):
 
         The Target Network is a frozen copy of the Action Value Network updated as regular intervals.
         """
-        agent_step = self._num_actions_taken
-        # if agent_step >= self.TRAIN_AFTER:
-        if (agent_step % self.TRAIN_INTERVAL) == 0:
-            # Clip all positive rewards at 1 and all negative rewards at -1, leaving 0 rewards unchanged
-            # reward = np.clip(reward, -1, 1)
-            print "Episode    :", self.episode, \
-                "\nTimestep   :", self.t, \
-                "\nAgent Step :", agent_step
+        # Train network
+        if (self.t % self.TRAIN_INTERVAL) == 0:
+            self.train_network()
 
-            if self.t >= self.INITIAL_REPLAY_SIZE:
-                # Train network
-                self.train_network()
+        # Update target network
+        if self.t % self.TARGET_UPDATE_INTERVAL == 0:
+            self.sess.run(self.update_target_network)
 
-                # Update target network
-                if self.t % self.TARGET_UPDATE_INTERVAL == 0:
-                    self.sess.run(self.update_target_network)
-
-                # Save network
-                if self.t % self.SAVE_INTERVAL == 0:
-                    save_path = self.saver.save(self.sess, self.SAVE_NETWORK_PATH + self.ENV_NAME + '/chkpnt', global_step=self.t)
-                    print "Successfully saved:", save_path
-
-            self.t += 1
+        # Save network
+        if self.t % self.SAVE_INTERVAL == 0:
+            save_path = self.saver.save(self.sess, self.SAVE_NETWORK_PATH + self.ENV_NAME + '/chkpnt', global_step=self.t)
+            if not self.QUIET: print "Successfully saved:", save_path
 
     def train_network(self):
         raise NotImplementedError
@@ -251,7 +239,7 @@ class BaseAgent(object):
 
         if self.t >= self.STATE_LENGTH:
             env_with_history = self._history.value
-            action = np.argmax(self.q_values.eval(feed_dict={self.s: env_with_history.reshape((1,) + env_with_history.shape)}))
+            action = np.argmax(self.sess.run(self.q_values, feed_dict={self.s: env_with_history.reshape((1,) + env_with_history.shape)}))
             return action
         else:
             return 0

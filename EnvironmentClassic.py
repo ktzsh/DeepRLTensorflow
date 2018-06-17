@@ -12,27 +12,23 @@ class Environment(object):
         self.env = gym.make(self.config['ENVIRONMENT']['NAME'])
         self.n   = self.env.action_space.n
 
-        self.test      = self.config['TEST']
         self.display   = self.config['DISPLAY']
 
-    def preprocess(self, state):
-        return state
 
     def render(self):
         if self.display:
             self.env.render()
 
     def reset(self):
-        state = self.preprocess(self.env.reset())
+        state = self.env.reset()
         self.render()
         return state
 
     def step(self, action):
-        state, reward, terminal, _ = self.preprocess(self.env.step(action))
+        state, reward, terminal, _ = self.env.step(action)
 
-        print "Reward     :", reward
-        print "Action     :", action
-        print "Done       :", terminal
+        # if terminal:
+        #     reward = -100.0
 
         self.render()
         return state, reward, (terminal*1.0)

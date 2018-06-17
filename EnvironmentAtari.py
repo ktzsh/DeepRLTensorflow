@@ -15,7 +15,6 @@ class Environment(object):
 
         self.env.reset()
 
-        self.test      = self.config['TEST']
         self.display   = self.config['DISPLAY']
         self.im_width  = self.config['IMAGE_WIDTH']
         self.im_height = self.config['IMAGE_HEIGHT']
@@ -65,16 +64,12 @@ class Environment(object):
             screen                      = self.preprocess(screen)
             cummulative_reward          = cummulative_reward + reward
 
-            if (not self.test) and (start_lives > self.env.unwrapped.ale.lives()):
+            if start_lives > self.env.unwrapped.ale.lives():
                 terminal             = True
                 cummulative_reward   = -1.0
 
             if terminal:
                 break
-
-        print "Reward     :", cummulative_reward
-        print "Action     :", action, " ",self.action_space[action]
-        print "Done       :", terminal
 
         self.render()
         return screen, cummulative_reward, (terminal*1.0)
