@@ -45,12 +45,7 @@ class Environment(object):
             self.env.render()
 
     def reset(self):
-        if self.env.unwrapped.ale.lives() == 0:
-            screen = self.preprocess(self.env.reset())
-        else:
-            screen, _, _, _ = self.env.step(0)
-            screen = self.preprocess(screen)
-
+        screen = self.preprocess(self.env.reset())
         self.render()
         return screen
 
@@ -60,13 +55,12 @@ class Environment(object):
         start_lives = self.env.unwrapped.ale.lives()
 
         for i in range(random.choice(self.repeat)):
-            screen, reward, _, _ = self.env.step(action)
+            screen, reward, terminal, _ = self.env.step(action)
             screen                      = self.preprocess(screen)
             cummulative_reward          = cummulative_reward + reward
 
-            if start_lives > self.env.unwrapped.ale.lives():
-                terminal             = True
-                cummulative_reward   = -1.0
+            # if start_lives > self.env.unwrapped.ale.lives():
+            #     cummulative_reward   = -10.0
 
             if terminal:
                 break
