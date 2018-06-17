@@ -95,11 +95,16 @@ class BaseAgent(object):
                                                                                     restore=restore_prefix)
             self.tb_counter  = len([log for log in os.listdir(os.path.expanduser(
                                             self.SAVE_SUMMARY_PATH + self.ENV_NAME)) if 'Experiment_' in log])
-            os.remove(restore_prefix + 'snapshot.lock')
         else:
             self._memory     = ReplayMemory(self.MEMORY_SIZE, self.input_shape[1:], self.STATE_LENGTH)
             self.tb_counter  = len([log for log in os.listdir(os.path.expanduser(
                                             self.SAVE_SUMMARY_PATH + self.ENV_NAME)) if 'Experiment_' in log]) + 1
+            os.makedirs(self.SAVE_SUMMARY_PATH + self.ENV_NAME + '/Experiment_' + str(self.tb_counter))
+
+        # Save snapshot of run configuration used
+        with open(self.SAVE_SUMMARY_PATH + self.ENV_NAME + '/Experiment_'
+                    + str(self.tb_counter) + '/config.run.yml', 'wb') as stream:
+            yaml.dump(self.config, stream, default_flow_style=False)
 
     def build_network(self, input_shape):
         raise NotImplementedError
@@ -192,7 +197,7 @@ class BaseAgent(object):
                                         str(self.episode) + '\n' + \
                                         str(self.t) + '\n' + \
                                         str(self._num_actions_taken) + '\n' + \
-                                        str(self.epsilon)
+                                        str(self.epsilon) + '\n'
             self._memory.save(self.SAVE_TRAIN_STATE_PATH + self.ENV_NAME + '/')
             with open(self.SAVE_TRAIN_STATE_PATH + self.ENV_NAME + '/snapshot.lock', 'wb') as f:
                 f.write(snapshot_params)
