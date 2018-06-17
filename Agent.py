@@ -127,12 +127,12 @@ class Agent(BaseAgent):
         episode_avg_loss     = tf.Variable(0.)
         episode_timestep     = tf.Variable(0.)
 
-        tf.summary.scalar(self.ENV_NAME + ':Total Reward/Episode', episode_total_reward)
-        tf.summary.scalar(self.ENV_NAME + ':Average Max Q/Episode', episode_avg_max_q)
-        tf.summary.scalar(self.ENV_NAME + ':Average Mean Q/Episode', episode_avg_mean_q)
-        tf.summary.scalar(self.ENV_NAME + ':Duration/Episode', episode_duration)
-        tf.summary.scalar(self.ENV_NAME + ':Average Loss/Episode', episode_avg_loss)
-        tf.summary.scalar(self.ENV_NAME + ':Timestep/Episode', episode_timestep)
+        tf.summary.scalar(self.ENV_NAME + '/Total Reward/Episode', episode_total_reward)
+        tf.summary.scalar(self.ENV_NAME + '/Average Max Q/Episode', episode_avg_max_q)
+        tf.summary.scalar(self.ENV_NAME + '/Average Mean Q/Episode', episode_avg_mean_q)
+        tf.summary.scalar(self.ENV_NAME + '/Duration/Episode', episode_duration)
+        tf.summary.scalar(self.ENV_NAME + '/Average Loss/Episode', episode_avg_loss)
+        tf.summary.scalar(self.ENV_NAME + '/Timestep/Episode', episode_timestep)
 
         summary_vars         = [episode_total_reward, episode_avg_max_q, episode_avg_mean_q, episode_duration, episode_avg_loss, episode_timestep]
         summary_placeholders = [tf.placeholder(tf.float32) for _ in range(len(summary_vars))]
