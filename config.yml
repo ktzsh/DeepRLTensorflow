@@ -26,7 +26,7 @@ AGENT:
     INITIAL_EPSILON        : 1.0      # Initial value of epsilon in epsilon-greedy
     FINAL_EPSILON          : 0.1      # Final value of epsilon in epsilon-greedy
     INITIAL_REPLAY_SIZE    : 100000   # Number of steps to populate the replay memory before training starts
-    EXPLORATION_STEPS      : 500000   # Number of exploratoion steps
+    EXPLORATION_STEPS      : 1000000  # Number of exploratoion steps
     MEMORY_SIZE            : 1000000  # Number of replay memory the agent uses for training
 
     BATCH_SIZE             : 32       # Mini batch size

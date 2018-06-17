@@ -14,12 +14,6 @@ class Environment(object):
 
         self.test      = self.config['TEST']
         self.display   = self.config['DISPLAY']
-        self.im_width  = self.config['IMAGE_WIDTH']
-        self.im_height = self.config['IMAGE_HEIGHT']
-        self.grayscale = self.config['GRAYSCALE_IMG']
-        self.normalize = self.config['NORMALIZE_IMG']
-        self.crop      = self.config['IMAGE_CROPING']
-        self.repeat    = self.config['REPEAT_ACTION']
 
     def preprocess(self, state):
         return state

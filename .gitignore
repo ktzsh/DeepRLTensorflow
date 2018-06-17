@@ -2,6 +2,7 @@
 chkpnt-*
 models/
 snapshot/
+chkpnts/
 snapshot.lock
 *.npy
 test.py
