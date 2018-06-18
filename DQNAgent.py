@@ -17,32 +17,34 @@ class Agent(BaseAgent):
         # Call Base Class init method
         super(Agent, self).__init__(type, name, input_shape, action_space)
 
+        tf.reset_default_graph()
+
         # Action Value model (used by agent to interact with the environment)
-        self.s, self.q_values, q_network = self.build_network(self.input_shape)
-        q_network_weights                = q_network.trainable_weights
-        q_network.summary()
+        self.s, self.q_values, self.q_network = self.build_network()
+        self.q_network_weights                = self.q_network.trainable_weights
+        self.q_network.summary()
 
         # Target model used to compute the target Q-values in training, updated
         # less frequently for increased stability.
-        self.st, self.target_q_values, target_network = self.build_network(self.input_shape)
-        target_network_weights                        = target_network.trainable_weights
+        self.st, self.target_q_values, self.target_network = self.build_network()
+        self.target_network_weights                        = self.target_network.trainable_weights
 
         # Define target network update operation
-        self.update_target_network = [ target_network_weights[i].assign(q_network_weights[i])
-                                            for i in range(len(target_network_weights))]
+        self.update_target_network = [ self.target_network_weights[i].assign(self.q_network_weights[i])
+                                            for i in range(len(self.target_network_weights))]
 
         # Define loss and gradient update operation
-        self.a, self.y, self.loss, self.grads_update = self.build_training_op(q_network_weights)
+        self.a, self.y, self.loss, self.grads_update = self.build_training_op()
 
         self.sess  = tf.Session()
-        self.saver = tf.train.Saver(q_network_weights)
+        self.saver = tf.train.Saver(self.q_network_weights)
 
         self.summary_placeholders, self.update_ops, self.summary_op = self.setup_summary()
 
         self.summary_writer = tf.summary.FileWriter(self.SAVE_SUMMARY_PATH + self.ENV_NAME + '/Experiment_'
                                                         + str(self.tb_counter), self.sess.graph)
 
-        self.sess.run(tf.initialize_all_variables())
+        self.sess.run(tf.global_variables_initializer())
 
         # Load network
         if self.LOAD_NETWORK:
@@ -52,7 +54,8 @@ class Agent(BaseAgent):
         self.sess.run(self.update_target_network)
 
 
-    def build_network(self, input_shape):
+    def build_network(self):
+        input_shape  = self.input_shape
         input_frames = Input(shape=input_shape, dtype='float32')
         x = Reshape(input_shape[1:-1] + (input_shape[0] * input_shape[-1],))(input_frames)
 
@@ -69,12 +72,12 @@ class Agent(BaseAgent):
         output = Dense(self.nb_actions, activation='linear')(x)
         model = Model(inputs=input_frames, outputs=output)
 
-        s = tf.placeholder(tf.float32, (None,) + self.input_shape)
+        s = tf.placeholder(tf.float32, (None,) + input_shape)
         q_values = model(s)
 
         return s, q_values, model
 
-    def build_training_op(self, q_network_weights):
+    def build_training_op(self):
         a = tf.placeholder(tf.int64, [None])
         y = tf.placeholder(tf.float32, [None])
 
@@ -92,7 +95,7 @@ class Agent(BaseAgent):
                                                     epsilon=self.MIN_GRAD,
                                                     decay=self.DECAY_RATE)
         # optimizer      = tf.train.AdamOptimizer(self.LEARNING_RATE)
-        grads_update   = optimizer.minimize(loss, var_list=q_network_weights)
+        grads_update   = optimizer.minimize(loss, var_list=self.q_network_weights)
 
         return a, y, loss, grads_update
 
