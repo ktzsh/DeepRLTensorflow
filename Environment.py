@@ -23,8 +23,6 @@ class Environment(object):
         self.repeat    = self.config['REPEAT_ACTION']
 
         if type == "Atari":
-            if self.crop:
-                self.im_height = self.im_width
             if self.grayscale:
                 self.input_shape = (self.im_height, self.im_width, 1)
             else:
@@ -41,19 +39,18 @@ class Environment(object):
     def preprocess(self, screen):
         if self.type == "Atari":
             channel = 3
+            if self.crop:
+                screen = screen[34:-16, :, :]
             if self.grayscale:
                 channel = 1
                 screen  = cv2.cvtColor(screen, cv2.COLOR_BGR2GRAY)
-
             screen = cv2.resize(screen, (self.im_width, self.im_height))
-            if self.crop:
-                dim    = self.im_height - self.im_width
-                screen = observation[dim:, :, :]
-
             screen = np.asarray(screen, dtype='float32')
             if self.normalize:
                 screen /= 255.0
             screen = screen.reshape((self.im_height, self.im_width, channel))
+        # cv2.imshow('Debug', screen)
+        # cv2.waitKey(0)
         return screen
 
     def render(self):

@@ -57,12 +57,11 @@ class Agent(BaseAgent):
         x = Reshape(input_shape[1:-1] + (input_shape[0] * input_shape[-1],))(input_frames)
 
         if self.ENV_TYPE == "Atari":
-            x = Conv2D(32, (8, 8), strides=(4,4), activation='tanh')(x)
-            x = Conv2D(64, (4, 4), strides=(2,2), activation='tanh')(x)
-            x = Conv2D(64, (3, 3), strides=(1,1), activation='tanh')(x)
+            x = Conv2D(32, (8, 8), strides=(4,4), activation='relu')(x)
+            x = Conv2D(64, (4, 4), strides=(2,2), activation='relu')(x)
+            x = Conv2D(64, (3, 3), strides=(1,1), activation='relu')(x)
             x = Flatten()(x)
-            x = Dense(512, activation='tanh')(x)
-            x = Dense(128, activation='tanh')(x)
+            x = Dense(512, activation='relu')(x)
         elif self.ENV_TYPE == "Classic":
             x = Dense(64, activation='tanh')(x)
             x = Dense(64, activation='tanh')(x)
