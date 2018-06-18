@@ -8,18 +8,21 @@ from utils.History import History
 from utils.ReplayMemory import ReplayMemory
 
 class BaseAgent(object):
-    def __init__(self, nb_actions):
+    def __init__(self, type, name, input_shape, nb_actions):
 
-        with open("config.yml", 'r') as stream:
+        self.ENV_TYPE = type
+        with open('cfg/' + type + '.yml', 'rb') as stream:
             self.config = yaml.load(stream)
 
-        self.AGENT_TYPE             = self.config['AGENT_TYPE']
+        self.ENV_NAME               = name
         self.DOUBLE_Q               = self.config['DOUBLE_Q']
+        self.QUIET                  = self.config['QUIET']
 
-        self.QUIET                   = self.config['QUIET']
-
-        self.ENV_NAME               = self.config['ENVIRONMENT']['NAME']
-        self.ENV_TYPE               = self.config['ENVIRONMENT']['TYPE']
+        self.IMAGE_WIDTH            = self.config['IMAGE_WIDTH']
+        self.IMAGE_HEIGHT           = self.config['IMAGE_HEIGHT']
+        self.GRAYSCALE_IMG          = self.config['GRAYSCALE_IMG']
+        self.NORMALIZE              = self.config['NORMALIZE_IMG']
+        self.CROP                   = self.config['IMAGE_CROPING']
 
         self.MAX_EPISODES           = self.config['AGENT']['MAX_EPISODES']
         self.STATE_LENGTH           = self.config['AGENT']['STATE_LENGTH']
@@ -43,12 +46,6 @@ class BaseAgent(object):
         self.SAVE_TRAIN_STATE       = self.config['AGENT']['SAVE_TRAIN_STATE']
         self.SAVE_TRAIN_STATE_PATH  = self.config['AGENT']['SAVE_TRAIN_STATE_PATH']
 
-        self.IMAGE_WIDTH   = self.config['IMAGE_WIDTH']
-        self.IMAGE_HEIGHT  = self.config['IMAGE_HEIGHT']
-        self.GRAYSCALE_IMG = self.config['GRAYSCALE_IMG']
-        self.NORMALIZE     = self.config['NORMALIZE_IMG']
-        self.CROP          = self.config['IMAGE_CROPING']
-
         self.t             = 0
         self.epsilon       = self.INITIAL_EPSILON
         self.epsilon_step  = (self.INITIAL_EPSILON - self.FINAL_EPSILON) / (self.EXPLORATION_STEPS )
@@ -60,20 +57,9 @@ class BaseAgent(object):
         self.duration      = 0
         self.episode       = 0
 
+        self.input_shape   = (self.STATE_LENGTH, ) + input_shape
         self.nb_actions    = nb_actions
-        if self.CROP:
-            self.IMAGE_HEIGHT = self.IMAGE_WIDTH
-
-        if self.GRAYSCALE_IMG:
-            self.input_shape = (self.STATE_LENGTH, self.IMAGE_HEIGHT, self.IMAGE_WIDTH, 1)
-        else:
-            self.input_shape = (self.STATE_LENGTH, self.IMAGE_HEIGHT, self.IMAGE_WIDTH, 3)
-
-        self.EXPLICIT_INPUT_SHAPE = self.config['EXPLICIT_INPUT_SHAPE']
-        if self.EXPLICIT_INPUT_SHAPE is not None:
-            self.input_shape = (self.STATE_LENGTH,) + tuple(self.EXPLICIT_INPUT_SHAPE)
-
-        self._history           = History(self.input_shape)
+        self._history      = History(self.input_shape)
 
         if not os.path.exists(self.SAVE_NETWORK_PATH + self.ENV_NAME):
             os.makedirs(self.SAVE_NETWORK_PATH + self.ENV_NAME)

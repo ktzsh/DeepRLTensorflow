@@ -1,48 +1,42 @@
 QUIET                  : true     # Hide debug messages
 DISPLAY                : true     # Whether to use display or not
 
-IMAGE_HEIGHT           : 105      # Resize Input frame Height
-IMAGE_WIDTH            : 80       # Resize Input frame Width
-GRAYSCALE_IMG          : true
-NORMALIZE_IMG          : true
-IMAGE_CROPING          : false    # In the original paper a square croped region is used however it is optional
-                                  # NOTE: Cropping assumes height is always greater than width
-
-EXPLICIT_INPUT_SHAPE   :          # Explicit Input Shape for Classic Control Envs
 REPEAT_ACTION          : [1]      # Number of times the same action is repeated. Sampled randomly from given array
                                   # Explicit frame skipping is not required in many gym games
                                   # since it is already implemented.
 
-AGENT_TYPE             : "DQN"    # DQN, DRQN TODO
 DOUBLE_Q               : false    # Enable Double Q-Learning
 
-ENVIRONMENT:
-    TYPE                   : "Atari"     # Classic Control or Atari game from gym
-    NAME                   : "Breakout-v0"
-
 AGENT:
-    MAX_EPISODES           : 100000     # Maximum number of episodes
+    MAX_EPISODES           : 2000     # Maximum number of episodes
     GAMMA                  : 0.99     # Discount factor
-    STATE_LENGTH           : 4        # Number of most recent frames to produce the input to the network
+    STATE_LENGTH           : 1        # Number of most recent frames to produce the input to the network
     INITIAL_EPSILON        : 1.0      # Initial value of epsilon in epsilon-greedy
     FINAL_EPSILON          : 0.1      # Final value of epsilon in epsilon-greedy
 
-    INITIAL_REPLAY_SIZE    : 10000    # Number of steps to populate the replay memory before training starts
-    EXPLORATION_STEPS      : 100000    # Number of exploratoion steps
-    MEMORY_SIZE            : 100000    # Number of replay memory the agent uses for training
+    INITIAL_REPLAY_SIZE    : 400     # Number of steps to populate the replay memory before training starts
+    EXPLORATION_STEPS      : 10000    # Number of exploratoion steps
+    MEMORY_SIZE            : 20000    # Number of replay memory the agent uses for training
 
     BATCH_SIZE             : 32       # Mini batch size
-    TARGET_UPDATE_INTERVAL : 5000     # The frequency with which the target network is updated
+    TARGET_UPDATE_INTERVAL : 4000     # The frequency with which the target network is updated
     TRAIN_INTERVAL         : 4        # The agent selects 4 actions between successive updates
 
-    LEARNING_RATE          : 0.001  # Learning rate used by RMSProp
+    LEARNING_RATE          : 0.00025  # Learning rate used by RMSProp
     MOMENTUM               : 0.95     # Momentum used by RMSProp
     MIN_GRAD               : 0.01     # Constant added to the squared gradient in the denominator of the RMSProp update
     DECAY_RATE             : 0.95
 
-    SAVE_INTERVAL          : 10000    # The frequency with which the network is saved
+    SAVE_INTERVAL          : 4000     # The frequency with which the network is saved
     SAVE_TRAIN_STATE       : false    # Take Snapshot of Training State to resume Training
     SAVE_TRAIN_STATE_PATH  : "snapshot/"
     LOAD_NETWORK           : true     # Whether to load model from SAVE_NETWORK_PATH or train a new one
     SAVE_NETWORK_PATH      : "chkpnts/"
     SAVE_SUMMARY_PATH      : "logs/"
+
+# Unused Vars kept for consistency
+IMAGE_HEIGHT           :
+IMAGE_WIDTH            :
+GRAYSCALE_IMG          :
+NORMALIZE_IMG          :
+IMAGE_CROPING          :

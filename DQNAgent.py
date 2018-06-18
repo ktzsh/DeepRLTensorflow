@@ -1,26 +1,21 @@
 import sys
 import time
 import yaml
+import argparse
 import numpy as np
 from collections import deque
 
 from Base import BaseAgent
-
-with open("config.yml", 'r') as stream:
-    config = yaml.load(stream)
-    if config['ENVIRONMENT']['TYPE'] == "Atari":
-        from EnvironmentAtari import Environment
-    elif config['ENVIRONMENT']['TYPE'] == "Classic":
-        from EnvironmentClassic import Environment
+from Environment import Environment
 
 import tensorflow as tf
 from keras.layers import Input, ConvLSTM2D, Dense, Flatten, Conv2D, Reshape
 from keras.models import Model
 
 class Agent(BaseAgent):
-    def __init__(self, nb_actions):
+    def __init__(self, type, name, input_shape, action_space):
         # Call Base Class init method
-        super(Agent, self).__init__(nb_actions)
+        super(Agent, self).__init__(type, name, input_shape, action_space)
 
         # Action Value model (used by agent to interact with the environment)
         self.s, self.q_values, q_network = self.build_network(self.input_shape)
@@ -65,7 +60,7 @@ class Agent(BaseAgent):
             x = Conv2D(32, (8, 8), strides=(4,4), activation='tanh')(x)
             x = Conv2D(64, (4, 4), strides=(2,2), activation='tanh')(x)
             x = Conv2D(64, (3, 3), strides=(1,1), activation='tanh')(x)
-            x = Flatten(name='flatten')(x)
+            x = Flatten()(x)
             x = Dense(512, activation='tanh')(x)
             x = Dense(128, activation='tanh')(x)
         elif self.ENV_TYPE == "Classic":
@@ -194,13 +189,23 @@ class Agent(BaseAgent):
             scores.append(t)
             mean_score = np.mean(scores)
 
-            if i % 100 == 0:
+            if i % 100 == 0 and i != 0:
                 print('[Episode {}] - Mean survival time over last 100 episodes was {} ticks.. Epsilon - {}'.format(str(i).zfill(5), mean_score, self.epsilon))
 
 
 if __name__=="__main__":
 
-    env   = Environment()
-    agent = Agent(env.n)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--type", choices=["Atari", "Classic"],
+                                  help="Select the Type of Game from OpenAI gym",
+                                  required=True)
+    parser.add_argument("--name", help="Select the Name of Game eg. Breakout-v0",
+                                  required=True)
+    args = parser.parse_args()
 
-    agent.run(env)
+    environment  = Environment(args.type, args.name)
+    input_shape  = environment.observation_shape()
+    nb_actions   = environment.nb_actions()
+
+    agent = Agent(args.type, args.name, input_shape, nb_actions)
+    agent.run(environment)
