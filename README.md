@@ -29,19 +29,15 @@ This implementation contains:
         $ pip install gym[all]
 
 2. To train a model for Breakout(or Any Other Atari Games):
-    - Edit the config.yml and change following keys:
-    	- ['ENVIRONMENT']['TYPE'] to 'Atari'
-    	- ['ENVIRONMENT']['NAME'] to 'Breakout-v0'
-    	- leave empty ['EXPLICIT_INPUT_SHAPE'] or set to null
-3. To train a model for CartPole(or Any Other Classic Control Games):
-    - Edit the config.yml and change following keys:
-        - ['ENVIRONMENT']['TYPE'] to 'Classic'
-        - ['ENVIRONMENT']['NAME'] to 'CartPole-v0'
-        - ['EXPLICIT_INPUT_SHAPE'] to shape of observations ([4] in case of CartPole)
-4. Change Other parameters as desired
-5. Then Run:
+    - Edit the config.yml as required and run:
 
-        $ python Agent.py
+            $ python DQNAgent.py --type Atari --name Breakout-v0
+
+3. To train a model for CartPole(or Any Other Classic Control Games):
+    - Edit the config.yml as required and run:
+
+            $ python DQNAgent.py --type Classic --name CartPole-v0
+
 
 
 ## Results
