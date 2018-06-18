@@ -190,7 +190,7 @@ class Agent(BaseAgent):
             mean_score = np.mean(scores)
 
             if i % 100 == 0 and i != 0:
-                print('[Episode {}] - Mean survival time over last 100 episodes was {} ticks.. Epsilon - {}'.format(str(i).zfill(5), mean_score, self.epsilon))
+                print('[Episode {}] - Mean survival time over last 100 episodes was {} ticks.. Epsilon - {}'.format(str(i).zfill(6), mean_score, self.epsilon))
 
 
 if __name__=="__main__":
