@@ -31,7 +31,7 @@ AGENT:
 
     LEARNING_RATE          : 0.00025  # Learning rate used by RMSProp
     MOMENTUM               : 0.0      # Momentum used by RMSProp
-    MIN_GRAD               : 1e-6     # Constant added to the squared gradient in the denominator of the RMSProp update
+    MIN_GRAD               : 0.000001 # Constant added to the squared gradient in the denominator of the RMSProp update
     DECAY_RATE             : 0.99
 
     SAVE_INTERVAL          : 10000    # The frequency with which the network is saved
