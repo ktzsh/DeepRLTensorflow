@@ -1,4 +1,4 @@
-import oss
+import os
 import gym
 import cv2
 import yaml
@@ -11,18 +11,30 @@ class Environment(object):
         with open('cfg/' + type + '.yml', 'rb') as stream:
             self.config = yaml.load(stream)
 
-        results_dir = "results/" + name
+        monitor     = self.config['ENVIRONMENT']['ADD_MONITOR_WRAPPER']
+        results_dir = self.config['ENVIRONMENT']['MONITOR_PATH'] + name
         if not os.path.exists(results_dir):
             os.makedirs(results_dir)
 
-        env            = gym.make(name)
-        self.env       = wrappers.Monitor(env, results_dir)
+        record_video_every = self.config['ENVIRONMENT']['RECORD_INTERVAL']
 
+        self.env = gym.make(name)
+        if monitor:
+            self.env       = wrappers.Monitor(self.env,
+                                    results_dir,
+                                    video_callable=lambda count: count % record_video_every == 0,
+                                    resume=True)
+
+        self.name              = name
         self.type              = type
         self.action_space      = self.env.action_space
         self.observation_space = self.env.observation_space
 
-        self.display   = self.config['DISPLAY']
+        self.display   = self.config['DISPLAY']['RENDER']
+        self.rescale   = self.config['DISPLAY']['RESCALE']
+        self.scale_w   = self.config['DISPLAY']['SCALE_W']
+        self.scale_h   = self.config['DISPLAY']['SCALE_H']
+
         self.im_width  = self.config['IMAGE_WIDTH']
         self.im_height = self.config['IMAGE_HEIGHT']
         self.grayscale = self.config['GRAYSCALE_IMG']
