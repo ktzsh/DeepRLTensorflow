@@ -178,7 +178,7 @@ class BaseAgent(object):
         # Append to long term memory
         self._memory.append(old_state, action, reward, done)
 
-        if done and self.SAVE_TRAIN_STATE and (self.t % self.SAVE_INTERVAL == 0 ):
+        if self.SAVE_TRAIN_STATE and (self.t % self.SAVE_INTERVAL == 0 ):
             os.remove(self.SAVE_TRAIN_STATE_PATH + self.ENV_NAME + '/snapshot.lock')
             snapshot_params =  'Snapshot Parameters [Episode, Timestep, Actions Taken, Epsilon]\n' + \
                                         str(self.episode) + '\n' + \
