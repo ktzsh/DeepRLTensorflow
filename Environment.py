@@ -31,9 +31,10 @@ class Environment(object):
         self.observation_space = self.env.observation_space
 
         self.display   = self.config['DISPLAY']['RENDER']
-        self.rescale   = self.config['DISPLAY']['RESCALE']
-        self.scale_w   = self.config['DISPLAY']['SCALE_W']
-        self.scale_h   = self.config['DISPLAY']['SCALE_H']
+        if type == "Atari":
+            self.rescale   = self.config['DISPLAY']['RESCALE']
+            self.scale_w   = self.config['DISPLAY']['SCALE_W']
+            self.scale_h   = self.config['DISPLAY']['SCALE_H']
 
         self.im_width  = self.config['IMAGE_WIDTH']
         self.im_height = self.config['IMAGE_HEIGHT']
@@ -75,7 +76,7 @@ class Environment(object):
 
     def render(self):
         if self.display:
-            if self.rescale and self.type == "Atari":
+            if self.type == "Atari" and self.rescale:
                 screen = self.env.render(mode='rgb_array')
                 scaled = cv2.resize(screen, (0,0), fx=self.scale_w, fy=self.scale_h)
                 cv2.imshow(self.name, scaled)
