@@ -1,15 +1,23 @@
+import oss
 import gym
 import cv2
 import yaml
 import random
 import numpy as np
+from gym import wrappers
 
 class Environment(object):
     def __init__(self, type, name):
         with open('cfg/' + type + '.yml', 'rb') as stream:
             self.config = yaml.load(stream)
 
-        self.env               = gym.make(name)
+        results_dir = "results/" + name
+        if not os.path.exists(results_dir):
+            os.makedirs(results_dir)
+
+        env            = gym.make(name)
+        self.env       = wrappers.Monitor(env, results_dir)
+
         self.type              = type
         self.action_space      = self.env.action_space
         self.observation_space = self.env.observation_space
