@@ -170,10 +170,8 @@ class Agent(BaseAgent):
         # Actual Training Begins
         print "Begin Training..."
         for i in range(self.MAX_EPISODES):
-            t             = 0
-            done          = False
-            current_state = env.reset()
-
+            t    = 0
+            done = False
             while not done:
                 action                  = self.act(current_state)
                 new_state, reward, done = env.step(action)
@@ -187,6 +185,7 @@ class Agent(BaseAgent):
 
                 current_state = new_state
                 t += 1
+            current_state = env.reset()
 
             scores.append(t)
             mean_score = np.mean(scores)
