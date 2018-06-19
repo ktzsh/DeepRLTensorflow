@@ -9,6 +9,7 @@ test.py
 pickle*
 memory_*
 logs/
+results/
 data/
 model.*
 events.*

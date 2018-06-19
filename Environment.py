@@ -75,7 +75,13 @@ class Environment(object):
 
     def render(self):
         if self.display:
-            self.env.render()
+            if self.rescale and self.type == "Atari":
+                screen = self.env.render(mode='rgb_array')
+                scaled = cv2.resize(screen, (0,0), fx=self.scale_w, fy=self.scale_h)
+                cv2.imshow(self.name, scaled)
+                cv2.waitKey(1)
+            else:
+                self.env.render()
 
     def reset(self):
         screen = self.preprocess(self.env.reset())
