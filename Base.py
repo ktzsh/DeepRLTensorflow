@@ -179,7 +179,7 @@ class BaseAgent(object):
         self._memory.append(old_state, action, reward, done)
 
         if self.SAVE_TRAIN_STATE and (self.t % self.SAVE_INTERVAL == 0 ):
-            if not os.path.exists(self.SAVE_TRAIN_STATE_PATH + self.ENV_NAME + '/snapshot.lock'):
+            if os.path.exists(self.SAVE_TRAIN_STATE_PATH + self.ENV_NAME + '/snapshot.lock'):
                 os.remove(self.SAVE_TRAIN_STATE_PATH + self.ENV_NAME + '/snapshot.lock')
             snapshot_params =  'Snapshot Parameters [Episode, Timestep, Actions Taken, Epsilon]\n' + \
                                         str(self.episode) + '\n' + \

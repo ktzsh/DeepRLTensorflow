@@ -78,7 +78,7 @@ class Environment(object):
         if self.display:
             if self.type == "Atari" and self.rescale:
                 screen = self.env.render(mode='rgb_array')
-                scaled = cv2.resize(screen, (0,0), fx=self.scale_w, fy=self.scale_h)
+                scaled = cv2.resize(cv2.cvtColor(screen, cv2.COLOR_BGR2RGB), (0,0), fx=self.scale_w, fy=self.scale_h)
                 cv2.imshow(self.name, scaled)
                 cv2.waitKey(1)
             else:

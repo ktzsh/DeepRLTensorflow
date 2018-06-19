@@ -2,9 +2,9 @@ QUIET                  : true     # Hide debug messages
 
 DISPLAY:
     RENDER             : true     # Whether to use display or not
-    RESCALE            : false    # Rescale the rendered display by factor
-    SCALE_H            : 3.0
-    SCALE_W            : 3.0
+    RESCALE            : true    # Rescale the rendered display by factor
+    SCALE_H            : 2.75
+    SCALE_W            : 2.75
 
 IMAGE_HEIGHT           : 84       # Resize Input frame Height
 IMAGE_WIDTH            : 84       # Resize Input frame Width
@@ -44,7 +44,7 @@ AGENT:
     MIN_GRAD               : 1.0e-6   # Constant added to the squared gradient in the denominator of the RMSProp update
     DECAY_RATE             : 0.99
 
-    SAVE_INTERVAL          : 50000    # The frequency with which the network is saved
+    SAVE_INTERVAL          : 25000    # The frequency with which the network is saved
     SAVE_TRAIN_STATE       : true     # Take Snapshot of Training State to resume Training
     SAVE_TRAIN_STATE_PATH  : "snapshot/"
     LOAD_NETWORK           : true     # Whether to load model from SAVE_NETWORK_PATH or train a new one
