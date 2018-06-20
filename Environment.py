@@ -91,12 +91,13 @@ class Environment(object):
     def reset(self):
         if self.type=="Atari" and self.random_game:
             screen = self.env.reset()
+            self.start_lives = self.env.unwrapped.ale.lives()
             no_rnd = np.random.randint(0, self.random_starts)
             for i in range(no_rnd):
                 screen, _, _, info = self.env.step(0)
+                if 'ale.lives' in info:
+                    self.start_lives = info['ale.lives']
             screen = self.preprocess(screen)
-            if 'ale.lives' in info:
-                self.start_lives = info['ale.lives']
         else:
             screen = self.preprocess(self.env.reset())
         self.render()
@@ -105,9 +106,6 @@ class Environment(object):
     def step(self, action):
         terminal = False
         cummulative_reward = 0.0
-
-        if self.type == "Atari":
-            start_lives = self.env.unwrapped.ale.lives()
 
         for i in range(random.choice(self.repeat)):
             screen, reward, terminal, info = self.env.step(action)

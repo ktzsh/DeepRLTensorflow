@@ -33,21 +33,21 @@ AGENT:
     INITIAL_EPSILON        : 1.0      # Initial value of epsilon in epsilon-greedy
     FINAL_EPSILON          : 0.1      # Final value of epsilon in epsilon-greedy
 
-    INITIAL_REPLAY_SIZE    : 50000    # Number of steps to populate the replay memory before training starts
-    EXPLORATION_STEPS      : 500000   # Number of exploratoion steps
-    MEMORY_SIZE            : 500000   # Number of replay memory the agent uses for training
+    INITIAL_REPLAY_SIZE    : 20000    # Number of steps to populate the replay memory before training starts
+    EXPLORATION_STEPS      : 200000   # Number of exploratoion steps
+    MEMORY_SIZE            : 200000   # Number of replay memory the agent uses for training
 
     BATCH_SIZE             : 32       # Mini batch size
-    TARGET_UPDATE_INTERVAL : 10000    # The frequency with which the target network is updated
-    TRAIN_INTERVAL         : 1        # The agent selects 4 actions between successive updates
+    TARGET_UPDATE_INTERVAL : 5000    # The frequency with which the target network is updated
+    TRAIN_INTERVAL         : 4        # The agent selects 4 actions between successive updates
 
-    LEARNING_RATE          : 0.00025  # Learning rate used by RMSProp
-    MOMENTUM               : 0.0      # Momentum used by RMSProp
-    MIN_GRAD               : 1.0e-6   # Constant added to the squared gradient in the denominator of the RMSProp update
-    DECAY_RATE             : 0.99
+    LEARNING_RATE          : 0.001   # Learning rate used by RMSProp
+    MOMENTUM               : 0.95     # Momentum used by RMSProp
+    MIN_GRAD               : 0.01     # Constant added to the squared gradient in the denominator of the RMSProp update
+    DECAY_RATE             : 0.96
 
-    SAVE_INTERVAL          : 25000    # The frequency with which the network is saved
-    SAVE_TRAIN_STATE       : true     # Take Snapshot of Training State to resume Training
+    SAVE_INTERVAL          : 10000    # The frequency with which the network is saved
+    SAVE_TRAIN_STATE       : false    # Take Snapshot of Training State to resume Training
     SAVE_TRAIN_STATE_PATH  : "snapshot/"
     LOAD_NETWORK           : true     # Whether to load model from SAVE_NETWORK_PATH or train a new one
     SAVE_NETWORK_PATH      : "chkpnts/"
