@@ -11,12 +11,18 @@ class Environment(object):
         with open('cfg/' + type + '.yml', 'rb') as stream:
             self.config = yaml.load(stream)
 
+        self.name   = name
+        self.type   = type
+
         monitor     = self.config['ENVIRONMENT']['ADD_MONITOR_WRAPPER']
         results_dir = self.config['ENVIRONMENT']['MONITOR_PATH'] + name
         if not os.path.exists(results_dir):
             os.makedirs(results_dir)
 
         record_video_every = self.config['ENVIRONMENT']['RECORD_INTERVAL']
+        if self.type=="Atari":
+            self.random_game   = self.config['ENVIRONMENT']['RANDOM_GAME']
+            self.random_starts = self.config['ENVIRONMENT']['RANDOM_STARTS']
 
         self.env = gym.make(name)
         if monitor:
@@ -25,8 +31,6 @@ class Environment(object):
                                     video_callable=lambda count: count % record_video_every == 0,
                                     resume=True)
 
-        self.name              = name
-        self.type              = type
         self.action_space      = self.env.action_space
         self.observation_space = self.env.observation_space
 
@@ -70,8 +74,8 @@ class Environment(object):
             if self.normalize:
                 screen /= 255.0
             screen = screen.reshape((self.im_height, self.im_width, channel))
-        # cv2.imshow('Debug', screen)
-        # cv2.waitKey(0)
+        # cv2.imshow('Processed Screen', screen)
+        # cv2.waitKey(1)
         return screen
 
     def render(self):
@@ -85,7 +89,16 @@ class Environment(object):
                 self.env.render()
 
     def reset(self):
-        screen = self.preprocess(self.env.reset())
+        if self.type=="Atari" and self.random_game:
+            screen = self.env.reset()
+            no_rnd = np.random.randint(0, self.random_starts)
+            for i in range(no_rnd):
+                screen, _, _, info = self.env.step(0)
+            screen = self.preprocess(screen)
+            if 'ale.lives' in info:
+                self.start_lives = info['ale.lives']
+        else:
+            screen = self.preprocess(self.env.reset())
         self.render()
         return screen
 
@@ -97,15 +110,19 @@ class Environment(object):
             start_lives = self.env.unwrapped.ale.lives()
 
         for i in range(random.choice(self.repeat)):
-            screen, reward, terminal, _ = self.env.step(action)
-            screen                      = self.preprocess(screen)
-            cummulative_reward          = cummulative_reward + reward
+            screen, reward, terminal, info = self.env.step(action)
+            screen                         = self.preprocess(screen)
+            cummulative_reward             = cummulative_reward + reward
 
-            # if self.type == "Atari":
-            #     if start_lives > self.env.unwrapped.ale.lives():
-            #         cummulative_reward   = -10.0
+            if 'ale.lives' in info:
+                lives = info['ale.lives']
+                if lives < self.start_lives:
+                    cummulative_reward = -1.0
+                    self.start_lives = lives
+                    break
 
             if terminal:
+                cummulative_reward = -1.0
                 break
 
         self.render()
