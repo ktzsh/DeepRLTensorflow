@@ -221,7 +221,7 @@ class BaseAgent(object):
     def load_network(self):
         raise NotImplementedError
 
-    def test(self, state):
+    def predict(self, state):
         self.t += 1
         self._history.append(state)
 

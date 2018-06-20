@@ -208,6 +208,18 @@ class Agent(BaseAgent):
         else:
             print('Training new network...')
 
+    def play(self, env):
+        current_state = env.reset()
+        for i in range(self.STATE_LENGTH-1):
+            _ = self.predict(current_state)
+
+        while True:
+            action = self.predict(current_state)
+            new_state, reward, done = env.step(action)
+            current_state = new_state
+            if done:
+                current_state = env.reset()
+
     def run(self, env):
         scores = deque(maxlen=100)
 
@@ -259,6 +271,8 @@ if __name__=="__main__":
                                   required=True)
     parser.add_argument("--name", help="Select the Name of Game eg. Breakout-v0",
                                   required=True)
+    parser.add_argument("--mode", choices=["train", "test"], help="Choose to Train or Test", default="train",
+                                  required=False)
     args = parser.parse_args()
 
     environment  = Environment(args.type, args.name)
@@ -266,4 +280,7 @@ if __name__=="__main__":
     nb_actions   = environment.nb_actions()
 
     agent = Agent(args.type, args.name, input_shape, nb_actions)
-    agent.run(environment)
+    if args.mode == "train":
+        agent.run(environment)
+    else:
+        agent.play(environment)
