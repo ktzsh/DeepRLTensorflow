@@ -8,7 +8,7 @@ class ReplayMemory(object):
     The replay memory allows us to efficiently sample minibatches from it, and generate the correct state representation
     (w.r.t the number of previous frames needed).
     """
-    def __init__(self, size, sample_shape, history_length=4, restore=None):
+    def __init__(self, size, sample_shape, history_length=4, restore=None, states_dtype=np.float32):
         self._pos            = 0
         self._count          = 0
         self._max_size       = size
@@ -21,7 +21,7 @@ class ReplayMemory(object):
             self._rewards    = np.load(restore + 'rewards.npy')
             self._terminals  = np.load(restore + 'terminals.npy')
         else:
-            self._states     = np.zeros((size,) + sample_shape, dtype=np.float32)
+            self._states     = np.zeros((size,) + sample_shape, dtype=states_dtype)
             self._actions    = np.zeros(size, dtype=np.uint8)
             self._rewards    = np.zeros(size, dtype=np.float32)
             self._terminals  = np.zeros(size, dtype=np.float32)

@@ -1,8 +1,13 @@
 import os
 import yaml
+import math
 import pickle
 import random
 import numpy as np
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # or any {'0', '1', '2'}
+
+import tensorflow as tf
 
 from utils.History import History
 from utils.ReplayMemory import ReplayMemory
@@ -30,15 +35,12 @@ class BaseAgent(object):
         self.EXPLORATION_STEPS      = self.config['AGENT']['EXPLORATION_STEPS']
         self.INITIAL_EPSILON        = self.config['AGENT']['INITIAL_EPSILON']
         self.FINAL_EPSILON          = self.config['AGENT']['FINAL_EPSILON']
+        self.EPSILON_EXP_DECAY      = self.config['AGENT']['EPSILON_EXP_DECAY']
         self.INITIAL_REPLAY_SIZE    = self.config['AGENT']['INITIAL_REPLAY_SIZE']
         self.MEMORY_SIZE            = self.config['AGENT']['MEMORY_SIZE']
         self.BATCH_SIZE             = self.config['AGENT']['BATCH_SIZE']
         self.TARGET_UPDATE_INTERVAL = self.config['AGENT']['TARGET_UPDATE_INTERVAL']
         self.TRAIN_INTERVAL         = self.config['AGENT']['TRAIN_INTERVAL']
-        self.LEARNING_RATE          = self.config['AGENT']['LEARNING_RATE']
-        self.MOMENTUM               = self.config['AGENT']['MOMENTUM']
-        self.MIN_GRAD               = self.config['AGENT']['MIN_GRAD']
-        self.DECAY_RATE             = self.config['AGENT']['DECAY_RATE']
         self.SAVE_INTERVAL          = self.config['AGENT']['SAVE_INTERVAL']
         self.LOAD_NETWORK           = self.config['AGENT']['LOAD_NETWORK']
         self.SAVE_NETWORK_PATH      = self.config['AGENT']['SAVE_NETWORK_PATH']
@@ -46,9 +48,20 @@ class BaseAgent(object):
         self.SAVE_TRAIN_STATE       = self.config['AGENT']['SAVE_TRAIN_STATE']
         self.SAVE_TRAIN_STATE_PATH  = self.config['AGENT']['SAVE_TRAIN_STATE_PATH']
 
+        self.LEARNING_RATE          = self.config['AGENT']['OPTIMIZER']['LEARNING_RATE']
+        self.USE_ADAPTIVE           = self.config['AGENT']['OPTIMIZER']['USE_ADAPTIVE']
+        self.GRADIENT_CLIP_NORM     = self.config['AGENT']['OPTIMIZER']['GRADIENT_CLIP']
+        self.RHO                    = self.config['AGENT']['OPTIMIZER']['RHO']
+        self.EPSILON                = self.config['AGENT']['OPTIMIZER']['EPSILON']
+        self.DECAY_RATE             = self.config['AGENT']['OPTIMIZER']['DECAY_RATE']
+
         self.t             = 0
         self.epsilon       = self.INITIAL_EPSILON
         self.epsilon_step  = (self.INITIAL_EPSILON - self.FINAL_EPSILON) / (self.EXPLORATION_STEPS )
+
+        # In case of exponential decay for epsilon this factor is required since value of epsilon has to
+        # change from INITIAL to FINAL and not from 1.0 to 0.0 in update_explore_rate()
+        self.correction    = 2 ** (self.INITIAL_EPSILON - self.FINAL_EPSILON) - 1.0
 
         self.total_reward  = 0.0
         self.total_q_max   = 0.0
@@ -59,7 +72,10 @@ class BaseAgent(object):
 
         self.input_shape   = (self.STATE_LENGTH, ) + input_shape
         self.nb_actions    = nb_actions
-        self._history      = History(self.input_shape)
+
+        if type == "Atari": states_dtype = np.uint8
+        else: states_dtype = np.float32
+        self._history      = History(self.input_shape, states_dtype)
 
         if not os.path.exists(self.SAVE_NETWORK_PATH + self.ENV_NAME):
             os.makedirs(self.SAVE_NETWORK_PATH + self.ENV_NAME)
@@ -73,19 +89,23 @@ class BaseAgent(object):
             print "Restoring Training State Snapshot from", restore_prefix
             with open(restore_prefix + 'snapshot.lock', 'rb') as f:
                 params = f.read().split('\n')
-                self.episode            = int(params[1])
-                self.t                  = int(params[2])
-                self.epsilon            = float(params[3])
+                self.episode = int(params[1])
+                self.t       = int(params[2])
+                self.epsilon = float(params[3])
 
             self._memory     = ReplayMemory(self.MEMORY_SIZE, self.input_shape[1:], self.STATE_LENGTH,
-                                                                                    restore=restore_prefix)
+                                                                restore=restore_prefix, states_dtype=states_dtype)
             self.tb_counter  = len([log for log in os.listdir(os.path.expanduser(
                                             self.SAVE_SUMMARY_PATH + self.ENV_NAME)) if 'Experiment_' in log])
         else:
-            self._memory     = ReplayMemory(self.MEMORY_SIZE, self.input_shape[1:], self.STATE_LENGTH)
+            self._memory     = ReplayMemory(self.MEMORY_SIZE, self.input_shape[1:], self.STATE_LENGTH,
+                                                                states_dtype=states_dtype)
             self.tb_counter  = len([log for log in os.listdir(os.path.expanduser(
                                             self.SAVE_SUMMARY_PATH + self.ENV_NAME)) if 'Experiment_' in log]) + 1
             os.makedirs(self.SAVE_SUMMARY_PATH + self.ENV_NAME + '/Experiment_' + str(self.tb_counter))
+
+        self.summary_writer = tf.summary.FileWriter(self.SAVE_SUMMARY_PATH + self.ENV_NAME + '/Experiment_'
+                                                        + str(self.tb_counter), tf.get_default_graph())
 
         # Save snapshot of run configuration used
         with open(self.SAVE_SUMMARY_PATH + self.ENV_NAME + '/Experiment_'
@@ -95,8 +115,11 @@ class BaseAgent(object):
     def build_network(self, input_shape):
         raise NotImplementedError
 
-    def build_training_op(self, q_network_weights):
-        raise NotImplementedError
+    def update_explore_rate(self):
+        if self.EPSILON_EXP_DECAY:
+            self.epsilon = max(self.FINAL_EPSILON, min(self.INITIAL_EPSILON, 1.0 - math.log(1.0 + self.correction * ((self.t - self.INITIAL_REPLAY_SIZE) / float(self.EXPLORATION_STEPS)), 2.0)))
+        else:
+            self.epsilon = max(self.FINAL_EPSILON, self.epsilon - self.epsilon_step)
 
     def act(self, state):
         """ This allows the agent to select the next action to perform in regard of the current state of the environment.
@@ -105,17 +128,21 @@ class BaseAgent(object):
         # Append the state to the short term memory (ie. History)
         self._history.append(state)
 
-        if self.epsilon >= random.random() or self.t < self.INITIAL_REPLAY_SIZE:
+        history = self._history.value
+        self.q_value = self.q_network.predict([
+                            history.reshape((1,) + history.shape),
+                            np.ones(self.nb_actions).reshape(1, self.nb_actions)])[0]
+
+        if np.random.rand() <= self.epsilon or self.t < self.INITIAL_REPLAY_SIZE:
             # Choose an action randomly
             action = random.randrange(self.nb_actions)
         else:
             # Use the network to output the best action
-            env_with_history = self._history.value
-            action = np.argmax(self.sess.run(self.q_values, feed_dict={self.s: env_with_history.reshape((1,) + env_with_history.shape)}))
+            action  = np.argmax(self.q_value)
 
         # Anneal epsilon linearly over time
         if self.epsilon > self.FINAL_EPSILON and self.t >= self.INITIAL_REPLAY_SIZE:
-            self.epsilon -= self.epsilon_step
+            self.update_explore_rate()
 
         self.t += 1
         return action
@@ -123,26 +150,19 @@ class BaseAgent(object):
     def observe(self, old_state, action, reward, done):
         """ This allows the agent to observe the output of doing the action it selected through act() on the old_state
         """
-        # If done, reset short term memory (ie. History)
         self.total_reward += reward
-        env_with_history = self._history.value
-        q_vals = self.sess.run(self.q_values, feed_dict={self.s: env_with_history.reshape((1,) + env_with_history.shape)})
-        self.total_q_max += np.max(q_vals)
-        self.total_q_mean += np.mean(q_vals)
+        self.total_q_max += np.max(self.q_value)
         self.duration += 1
+
+        e_summary = tf.Summary(
+            value=[tf.Summary.Value(
+                tag=self.ENV_NAME + '/Epsilon/Timestep', simple_value=self.epsilon)])
+        self.summary_writer.add_summary(e_summary, self.t)
 
         if done:
             # Write summary
             if self.t >= self.INITIAL_REPLAY_SIZE:
-                stats = [self.total_reward, self.total_q_max / float(self.duration),
-                            self.total_q_mean / float(self.duration), self.duration,
-                            self.total_loss / (float(self.duration)), self.t]
-                for i in range(len(stats)):
-                    self.sess.run(self.update_ops[i], feed_dict={
-                        self.summary_placeholders[i]: float(stats[i])
-                    })
-                summary_str = self.sess.run(self.summary_op)
-                self.summary_writer.add_summary(summary_str, self.episode + 1)
+                self.write_summary()
 
             # Debug
             if self.t < self.INITIAL_REPLAY_SIZE:
@@ -190,27 +210,45 @@ class BaseAgent(object):
                 f.write(snapshot_params)
 
     def train(self):
-        """ This allows the agent to train itself to better understand the environment dynamics.
-        The agent will compute the expected reward for the state(t+1)
-        and update the expected reward at step t according to this.
-
-        The target expectation is computed through the Target Network, which is a more stable version
-        of the Action Value Network for increasing training stability.
-
-        The Target Network is a frozen copy of the Action Value Network updated as regular intervals.
-        """
         # Train network
         if (self.t % self.TRAIN_INTERVAL) == 0:
             self.train_network()
 
         # Update target network
         if self.t % self.TARGET_UPDATE_INTERVAL == 0:
-            self.sess.run(self.update_target_network)
+            self.target_q_network.set_weights(self.q_network.get_weights())
 
         # Save network
         if self.t % self.SAVE_INTERVAL == 0:
-            save_path = self.saver.save(self.sess, self.SAVE_NETWORK_PATH + self.ENV_NAME + '/chkpnt', global_step=self.t)
+            save_path = self.SAVE_NETWORK_PATH + self.ENV_NAME + '/chkpnt-' + str(self.t) + '.h5'
+            self.q_network.save_weights(save_path)
             if not self.QUIET: print "Successfully saved:", save_path
+
+    def write_summary(self):
+        r_summary = tf.Summary(
+            value=[tf.Summary.Value(
+                tag=self.ENV_NAME + '/Total Reward/Episode', simple_value=self.total_reward)])
+        self.summary_writer.add_summary(r_summary, self.episode + 1)
+
+        q_summary = tf.Summary(
+            value=[tf.Summary.Value(
+                tag=self.ENV_NAME + '/Average Max Q/Episode', simple_value=(self.total_q_max / float(self.duration)))])
+        self.summary_writer.add_summary(q_summary, self.episode + 1)
+
+        l_summary = tf.Summary(
+            value=[tf.Summary.Value(
+                tag=self.ENV_NAME + '/Average Loss/Episode', simple_value=(self.total_loss / float(self.duration)))])
+        self.summary_writer.add_summary(l_summary, self.episode + 1)
+
+        d_summary = tf.Summary(
+            value=[tf.Summary.Value(
+                tag=self.ENV_NAME + '/Duration/Episode', simple_value=self.duration)])
+        self.summary_writer.add_summary(d_summary, self.episode + 1)
+
+        t_summary = tf.Summary(
+            value=[tf.Summary.Value(
+                tag=self.ENV_NAME + '/Timestep/Episode', simple_value=self.t)])
+        self.summary_writer.add_summary(t_summary, self.episode + 1)
 
     def train_network(self):
         raise NotImplementedError
@@ -218,16 +256,26 @@ class BaseAgent(object):
     def setup_summary(self):
         raise NotImplementedError
 
-    def load_network(self):
-        raise NotImplementedError
-
     def predict(self, state):
         self.t += 1
         self._history.append(state)
 
         if self.t >= self.STATE_LENGTH:
-            env_with_history = self._history.value
-            action = np.argmax(self.sess.run(self.q_values, feed_dict={self.s: env_with_history.reshape((1,) + env_with_history.shape)}))
+            history = self._history.value
+            q_value = self.q_network.predict([
+                                history.reshape((1,) + history.shape),
+                                np.ones(self.nb_actions).reshape(1, self.nb_actions)])[0]
+            action = np.argmax(q_value)
             return action
         else:
             return 0
+
+    def load_network(self, weight_file=None):
+        if weight_file is not None:
+            self.q_network.load_weights(weight_file)
+        else:
+            chkpnts = [log for log in os.listdir(os.path.expanduser(
+                                        self.SAVE_NETWORK_PATH + self.ENV_NAME)) if 'chkpnt-' in log]
+            if len(chkpnts) != 0:
+                chkpnts.sort()
+                self.q_network.load_weights(self.SAVE_NETWORK_PATH + self.ENV_NAME + '/' + chkpnts[-1])

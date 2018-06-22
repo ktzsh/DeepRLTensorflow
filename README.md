@@ -19,7 +19,7 @@ This implementation contains:
 - Yaml
 - [gym](https://github.com/openai/gym)
 - [OpenCV2](http://opencv.org/)
-- [TensorFlow](https://github.com/tensorflow/tensorflow)
+- [TensorFlow](https://github.com/tensorflow/tensorflow) (Only for tensorboard)
 - [Keras](https://keras.io/)
 
 ## Usage
@@ -31,13 +31,16 @@ This implementation contains:
 2. To train a model for Breakout(or Any Other Atari Games):
     - Edit the config.yml as required and run:
 
-            $ python DQNAgent.py --type Atari --name Breakout-v0
+            $ python main.py --type Atari --name BreakoutDeterministic-v4
 
 3. To train a model for CartPole(or Any Other Classic Control Games):
     - Edit the config.yml as required and run:
 
-            $ python DQNAgent.py --type Classic --name CartPole-v0
+            $ python main.py --type Classic --name CartPole-v0
 
+4. To test a model run:
+
+        $ python main.py --type <TYPE> --name <NAME> --mode test
 
 
 ## Results
@@ -47,6 +50,7 @@ This implementation contains:
 ## TODOs
 - [x] Implement DQN
 - [x] Implement DDQN
+- [ ] Adaptive Exploration Rates
 - [ ] Implement DRQN
 - [ ] Prioritized Experience Replay
 - [ ] Add Detailed Results
