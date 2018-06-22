@@ -21,13 +21,10 @@ class BaseGymEnvironment(object):
         if not os.path.exists(results_dir):
             os.makedirs(results_dir)
 
-        record_video_every = self.config['ENVIRONMENT']['RECORD_INTERVAL']
-
         if monitor:
             self.env = wrappers.Monitor(self.env,
                             results_dir,
-                            video_callable=lambda count: count % record_video_every == 0,
-                            resume=True)
+                            force=True)
 
         self.repeat = self.config['REPEAT_ACTION']
 
@@ -69,3 +66,9 @@ class BaseGymEnvironment(object):
 
         self.render()
         return screen, cummulative_reward, (terminal*1.0)
+
+    def upload(self):
+        gym.upload(self.results_dir, algorithm_id='episodic_controller')
+
+    def close(self):
+        self.env.monitor.close()

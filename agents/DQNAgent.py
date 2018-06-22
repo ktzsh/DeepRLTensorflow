@@ -150,5 +150,10 @@ class DQNAgent(BaseAgent):
 
             if i % 100 == 0 and i != 0:
                 print('[Episode {}] - Mean survival time over last 100 episodes was {} ticks'.format(str(i).zfill(6), mean_score))
+                if (self.TARGET_TICKS is not None) and mean_score >= self.TARGET_TICKS:
+                    print "Mean target over last 100 episodes reached."
+                    break
 
         self.summary_writer.close()
+        env.upload()
+        env.close()

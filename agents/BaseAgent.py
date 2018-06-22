@@ -29,6 +29,7 @@ class BaseAgent(object):
         self.NORMALIZE              = self.config['NORMALIZE_IMG']
         self.CROP                   = self.config['IMAGE_CROPING']
 
+        self.TARGET_TICKS           = self.config['AGENT']['TARGET_TICKS']
         self.MAX_EPISODES           = self.config['AGENT']['MAX_EPISODES']
         self.STATE_LENGTH           = self.config['AGENT']['STATE_LENGTH']
         self.GAMMA                  = self.config['AGENT']['GAMMA']

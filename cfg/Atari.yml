@@ -20,13 +20,13 @@ REPEAT_ACTION          : [1]      # Number of times the same action is repeated.
 ENVIRONMENT:
     ADD_MONITOR_WRAPPER    : false    # Monitor Wrapper for Gym Environment
     MONITOR_PATH           : "results/"
-    RECORD_INTERVAL        : 50
     RANDOM_GAME            : false
     RANDOM_STARTS          : 1
 
 DOUBLE_Q                   : false    # Enable Double Q-Learning
 
 AGENT:
+    TARGET_TICKS           :          # Specify mean target ticks over last 100 episodes to be reached
     MAX_EPISODES           : 10000    # Maximum number of episodes
     GAMMA                  : 0.99     # Discount factor
     STATE_LENGTH           : 4        # Number of most recent frames to produce the input to the network
