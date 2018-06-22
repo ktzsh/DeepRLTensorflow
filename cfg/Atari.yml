@@ -18,7 +18,7 @@ REPEAT_ACTION          : [1]      # Number of times the same action is repeated.
                                   # since it is already implemented.
 
 ENVIRONMENT:
-    ADD_MONITOR_WRAPPER    : false     # Monitor Wrapper for Gym Environment
+    ADD_MONITOR_WRAPPER    : false    # Monitor Wrapper for Gym Environment
     MONITOR_PATH           : "results/"
     RECORD_INTERVAL        : 50
     RANDOM_GAME            : false

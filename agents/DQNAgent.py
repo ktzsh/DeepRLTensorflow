@@ -50,32 +50,18 @@ class DQNAgent(BaseAgent):
         if self.ENV_TYPE == "Atari":
             x = Lambda(lambda x: x / 255.0)(x)
             x = Conv2D(32, (8, 8), strides=(4,4),
-                        activation='relu',
-                        kernel_initializer=TruncatedNormal(stddev=0.02),
-                        bias_initializer=Constant(value=0.02))(x)
+                        activation='relu')(x)
             x = Conv2D(64, (4, 4), strides=(2,2),
-                        activation='relu',
-                        kernel_initializer=TruncatedNormal(stddev=0.02),
-                        bias_initializer=Constant(value=0.02))(x)
+                        activation='relu')(x)
             x = Conv2D(64, (3, 3), strides=(1,1),
-                        activation='relu',
-                        kernel_initializer=TruncatedNormal(stddev=0.02),
-                        bias_initializer=Constant(value=0.02))(x)
+                        activation='relu')(x)
             x = Flatten()(x)
-            x = Dense(512, activation='relu',
-                        kernel_initializer=TruncatedNormal(stddev=0.02),
-                        bias_initializer=Constant(value=0.02))(x)
+            x = Dense(512, activation='relu')(x)
         elif self.ENV_TYPE == "Classic":
-            x = Dense(64, activation='tanh',
-                        kernel_initializer=TruncatedNormal(stddev=0.02),
-                        bias_initializer=Constant(value=0.02))(x)
-            x = Dense(64, activation='tanh',
-                        kernel_initializer=TruncatedNormal(stddev=0.02),
-                        bias_initializer=Constant(value=0.02))(x)
+            x = Dense(64, activation='tanh')(x)
+            x = Dense(64, activation='tanh')(x)
 
-        output = Dense(self.nb_actions, activation='linear',
-                        kernel_initializer=TruncatedNormal(stddev=0.02),
-                        bias_initializer=Constant(value=0.02))(x)
+        output = Dense(self.nb_actions, activation='linear')(x)
         filtered_output = Multiply()([output, input_actions])
 
 
@@ -163,6 +149,6 @@ class DQNAgent(BaseAgent):
             mean_score = np.mean(scores)
 
             if i % 100 == 0 and i != 0:
-                print('[Episode {}] - Mean survival time over last 100 episodes was {} ticks.. Epsilon - {}'.format(str(i).zfill(6), mean_score, self.epsilon))
+                print('[Episode {}] - Mean survival time over last 100 episodes was {} ticks'.format(str(i).zfill(6), mean_score))
 
         self.summary_writer.close()
