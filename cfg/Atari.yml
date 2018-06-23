@@ -27,7 +27,7 @@ DOUBLE_Q                   : false    # Enable Double Q-Learning
 
 AGENT:
     TARGET_TICKS           :          # Specify mean target ticks over last 100 episodes to be reached
-    MAX_EPISODES           : 10000    # Maximum number of episodes
+    MAX_EPISODES           : 1000000  # Maximum number of episodes
     GAMMA                  : 0.99     # Discount factor
     STATE_LENGTH           : 4        # Number of most recent frames to produce the input to the network
     INITIAL_EPSILON        : 1.0      # Initial value of epsilon in epsilon-greedy
@@ -43,7 +43,7 @@ AGENT:
     TRAIN_INTERVAL         : 4        # The agent selects 4 actions between successive updates
 
     OPTIMIZER:
-        LEARNING_RATE      : 0.0005   # Learning rate used by Optimier
+        LEARNING_RATE      : 0.001    # Learning rate used by Optimier
         USE_ADAPTIVE       : true     # Select to use Adam Optimizer
         GRADIENT_CLIP      : 0.0      # Global max norm clip value for gradients. Set 0 to diable
         RHO                : 0.90

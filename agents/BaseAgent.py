@@ -273,10 +273,13 @@ class BaseAgent(object):
 
     def load_network(self, weight_file=None):
         if weight_file is not None:
+            print "Loading weights from", weight_file
             self.q_network.load_weights(weight_file)
         else:
             chkpnts = [log for log in os.listdir(os.path.expanduser(
                                         self.SAVE_NETWORK_PATH + self.ENV_NAME)) if 'chkpnt-' in log]
             if len(chkpnts) != 0:
                 chkpnts.sort()
-                self.q_network.load_weights(self.SAVE_NETWORK_PATH + self.ENV_NAME + '/' + chkpnts[-1])
+                weight_file = self.SAVE_NETWORK_PATH + self.ENV_NAME + '/' + chkpnts[-1]
+                print "Loading weights from", weight_file
+                self.q_network.load_weights(weight_file)
