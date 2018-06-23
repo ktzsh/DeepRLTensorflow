@@ -155,5 +155,4 @@ class DQNAgent(BaseAgent):
                     break
 
         self.summary_writer.close()
-        env.upload()
         env.close()

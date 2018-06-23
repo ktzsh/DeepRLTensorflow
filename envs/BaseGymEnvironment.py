@@ -67,8 +67,5 @@ class BaseGymEnvironment(object):
         self.render()
         return screen, cummulative_reward, (terminal*1.0)
 
-    def upload(self):
-        gym.upload(self.results_dir, algorithm_id='episodic_controller')
-
     def close(self):
         self.env.monitor.close()
