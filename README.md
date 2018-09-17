@@ -35,9 +35,11 @@ Download an [atari rom](https://github.com/openai/atari-py/tree/master/atari_py/
 wget https://github.com/openai/atari-py/raw/master/atari_py/atari_roms/breakout.bin
 ```
 
+Change config/parameter values in cfg/AtariConfig.py
+
 Start Training:
 ```
-./DQN.py --rom breakout.bin
+python main.py --rom breakout.bin
 # use `--algo` to select other DQN algorithms. See `-h` for more options.
 ```
 
@@ -45,7 +47,7 @@ Watch the agent play:
 ```
 # Download pretrained models or use one you trained:
 wget http://models.tensorpack.com/DeepQNetwork/DoubleDQN-Breakout.npz
-./DQN.py --rom breakout.bin --task play --load DoubleDQN-Breakout.npz
+python main.py --rom breakout.bin --task play --load DoubleDQN-Breakout.npz
 ```
 
 A3C code and models for Atari games in OpenAI Gym are released in [examples/A3C-Gym](../A3C-Gym)
