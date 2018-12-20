@@ -1,0 +1,63 @@
+# ENV_NAME:                           'PongNoFrameskip-v4'
+# ENV_TYPE:                           'Atari'
+
+ENV_NAME:                           'CartPole-v1'
+ENV_TYPE:                           'Classic'
+
+# Common Parameters
+# MODEL:
+#     TYPE: 'conv_only'
+#     MLP:
+#         NUM_LAYERS: 2
+#         NUM_HIDDEN: 64
+#     CONVS:
+#         - [32, 8, 4]
+#         - [64, 4, 2]
+#         - [64, 3, 1]
+#     HIDDENS:
+#         - 256
+#     LSTM_UNITS:
+#         - 128
+
+MODEL:
+    TYPE: 'mlp'
+    MLP:
+        NUM_LAYERS: 2
+        NUM_HIDDEN: 64
+    CONVS:
+        - [32, 8, 4]
+        - [64, 4, 2]
+        - [64, 3, 1]
+    HIDDENS:
+        - 256
+    LSTM_UNITS:
+        - 128
+
+# Parameters specific to OpenAI Implementation
+DUELING:                            True
+LEARNING_RATE:                      0.001  # 0.0001
+TOTAL_TIMESTEPS:                    500000 # 10000000
+BUFFER_SIZE:                        10000  # 10000
+EXPLORATION_FRACTION:               0.1
+EXPLORATION_FINAL_EPS:              0.01
+TRAIN_FREQ:                         4
+NO_OP_STEPS:                        10000
+TARGET_UPDATE_FREQ:                 1000
+GAMMA:                              0.99
+SEED:                               0
+BATCH_SIZE:                         32
+PRINT_FREQ:                         100
+CHECKPOINT_FREQ:                    10000
+
+PRIORITIZED_REPLAY:                 False
+PRIORITIZED_REPLAY_ALPHA:           0.6
+PRIORITIZED_REPLAY_BETA:            0.4
+PRIORITIZED_REPLAY_BETA_ITERS:
+PRIORITIZED_REPLAY_EPS:             1e-6
+
+PARAM_NOISE:                        False
+
+CHECKPOINT_PATH_PREFIX:             'chkpnts/'
+
+LOAD_FROM_CHECKPOINT:               False
+LOAD_PATH_PREFIX:                   'chkpnts/'

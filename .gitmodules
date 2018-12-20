@@ -1,0 +1,4 @@
+[submodule "agent/baselines"]
+	path = agent/baselines
+	url = https://github.com/openai/baselines.git
+	branch = master
